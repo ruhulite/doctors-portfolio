@@ -1,0 +1,2 @@
+import { Link } from "react-router-dom";
+export function NotFoundPage() { return <section className="container-shell py-24 text-center"><p className="text-sm font-bold text-teal">404</p><h1 className="mt-3 text-3xl font-bold">Page not found</h1><Link className="mt-6 inline-block text-sm font-semibold text-teal underline" to="/">Return home</Link></section>; }

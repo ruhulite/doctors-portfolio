@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+}
+enum AppointmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STAFF)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  auditLogs    AuditLog[]
+}
+
+model Chamber {
+  id          String       @id @default(cuid())
+  name        String
+  branch      String
+  address     String?
+  phone       String?
+  active      Boolean      @default(true)
+  schedules   Schedule[]
+  appointments Appointment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Schedule {
+  id                 String   @id @default(cuid())
+  chamberId          String
+  chamber            Chamber  @relation(fields: [chamberId], references: [id], onDelete: Cascade)
+  dayOfWeek          Int      // 0 Sunday ... 6 Saturday
+  startTime          String   // HH:mm, Bangladesh local time
+  endTime            String   // HH:mm, Bangladesh local time
+  slotDurationMinutes Int     @default(15)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  @@unique([chamberId, dayOfWeek])
+  @@index([chamberId, active])
+}
+
+model Appointment {
+  id             String            @id @default(cuid())
+  chamberId      String
+  chamber        Chamber           @relation(fields: [chamberId], references: [id], onDelete: Restrict)
+  patientName    String
+  patientPhone   String
+  patientEmail   String?
+  note           String?           @db.VarChar(1000)
+  startsAt       DateTime          @db.Timestamptz(3)
+  endsAt         DateTime          @db.Timestamptz(3)
+  status         AppointmentStatus @default(PENDING)
+  adminNote      String?           @db.VarChar(1000)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  reviewedById   String?
+  reviewedAt     DateTime?
+  @@index([chamberId, startsAt])
+  @@index([status, startsAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

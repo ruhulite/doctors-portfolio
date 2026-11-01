@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "chambers": "Chambers",
+    "appointment": "Appointment",
+    "book": "Book appointment"
+  },
+  "hero": {
+    "eyebrow": "Expert gastroenterology care",
+    "title": "Expert care for your digestive health.",
+    "description": "Consult with an experienced gastroenterology specialist for digestive system, liver and pancreatic conditions.",
+    "profile": "View profile",
+    "experience": "16 years of experience*"
+  },
+  "about": {
+    "eyebrow": "About the professor",
+    "title": "Professor Dr. Muhammad Abdullahel Kafi",
+    "specialty": "Specialist in digestive system, liver and pancreatic diseases",
+    "previous": "Former Consultant, Dhaka Medical College & Hospital, Dhaka",
+    "qualification": "Qualifications"
+  },
+  "specialties": {
+    "title": "Focused care across digestive health",
+    "digestive": "Digestive system",
+    "liver": "Liver diseases",
+    "pancreas": "Pancreatic diseases",
+    "endoscopy": "Therapeutic endoscopy",
+    "ercp": "ERCP",
+    "consultation": "Specialist consultation"
+  },
+  "chambers": {
+    "title": "Chambers & visiting hours",
+    "popular": "Popular Hospital",
+    "ibn": "IBN Sina Hospital",
+    "branch": "Dhanmondi Branch, Dhaka",
+    "popularAddress": "House #16, Bir Uttam M A Rab Sarak, Dhaka 1205",
+    "phone": "Appointment phone",
+    "popularHours": "7:00 PM – 9:30 PM",
+    "ibnHours": "12:30 PM – 6:30 PM",
+    "days": "Saturday, Sunday, Monday, Tuesday & Wednesday",
+    "addressPending": "Full branch address to be confirmed",
+    "phonePending": "Hospital contact number to be added",
+    "verify": "Please contact the hospital to confirm availability before visiting."
+  },
+  "booking": {
+    "title": "Request an appointment",
+    "description": "Choose your preferred chamber and date. The hospital or chamber team must confirm your appointment.",
+    "name": "Patient name",
+    "phone": "Mobile number",
+    "chamber": "Preferred chamber",
+    "date": "Preferred date",
+    "notes": "Additional note (optional)",
+    "submit": "Submit request",
+    "demo": "Demo form only. It is not connected to a live booking service; no information is transmitted."
+  },
+  "footer": {
+    "disclaimer": "Medical information is educational and does not replace professional consultation."
+  }
+}

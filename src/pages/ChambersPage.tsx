@@ -1,0 +1,2 @@
+import { ChamberCards } from "../components/sections/ChamberCards";
+export function ChambersPage() { return <><div className="container-shell pt-12"><h1 className="text-4xl font-bold">Chambers & appointments</h1><p className="mt-3 text-sm text-muted">Dhaka, Bangladesh</p></div><ChamberCards/></>; }
