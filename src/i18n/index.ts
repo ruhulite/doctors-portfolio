@@ -5,8 +5,8 @@ import bn from "./locales/bn.json";
 
 void i18n.use(initReactI18next).init({
   resources: { en: { translation: en }, bn: { translation: bn } },
-  lng: "en",
-  fallbackLng: "en",
+  lng: "bn",
+  fallbackLng: "bn",
   interpolation: { escapeValue: false },
 });
 

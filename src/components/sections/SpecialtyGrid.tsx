@@ -13,5 +13,5 @@ const items = [
 
 export function SpecialtyGrid() {
   const { t } = useTranslation();
-  return <section className="bg-mist py-16 md:py-20"><div className="container-shell"><SectionHeading centered title={t("specialties.title")} eyebrow="Areas of expertise"/><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{items.map(({key,Icon,desc})=><article key={key} className="rounded-2xl border border-line bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"><span className="mb-5 grid size-11 place-items-center rounded-xl bg-mint text-teal"><Icon size={21}/></span><h3 className="font-bold text-ink">{t(`specialties.${key}`)}</h3><p className="mt-2 text-sm leading-6 text-muted">{desc}</p></article>)}</div></div></section>;
+  return <section className="bg-[#f2f7f9] py-16 md:py-20"><div className="container-shell"><SectionHeading centered title={t("specialties.title")} eyebrow="Areas of expertise"/><div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{items.map(({key,Icon,desc})=><article key={key} className="feature-card"><span className="feature-icon"><Icon size={21}/></span><h3 className="font-extrabold text-ink">{t(`specialties.${key}`)}</h3><p className="mt-2 text-sm leading-7 text-muted">{desc}</p></article>)}</div></div></section>;
 }

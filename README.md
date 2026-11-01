@@ -1,8 +1,20 @@
-# Kafi Gastroenterology Portfolio
+# Professor Dr. Muhammad Abdullahel Kafi — React Frontend
 
-React + Vite + TypeScript frontend for Professor Dr. Muhammad Abdullahel Kafi.
+A bilingual (English/Bangla) React + Vite + TypeScript website for a gastroenterology specialist.
 
-## Frontend setup
+## Visual direction
+
+The public-facing design has been refreshed with a classic medical-template visual direction inspired by the supplied AbrarPro reference: a medical-blue and teal palette, slim contact strip, prominent navigation, large hero area, appointment-focused information panels, expertise cards, chamber details, and a strong appointment call-to-action. This is an original implementation for this project, not a copy of the reference template.
+
+## Stack
+
+- React 19 + Vite + TypeScript
+- Tailwind CSS v4
+- React Router
+- i18next / react-i18next
+- lucide-react icons
+
+## Run locally
 
 ```bash
 npm install
@@ -10,28 +22,25 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Set `VITE_API_URL` to the NestJS API base URL, including `/api` (for example `http://localhost:4000/api`). For Vercel, add `VITE_API_URL` in Project Settings → Environment Variables and redeploy. The API must allow the deployed frontend origin through its `FRONTEND_ORIGIN` environment variable and must be served over HTTPS in production.
+Set `VITE_API_URL` in `.env.local` to the NestJS API base URL, for example `http://localhost:4000/api`.
 
-## Appointment workflow
+## Build
 
-The public form loads active chambers and available slots from the API, then submits a request to `POST /api/appointments`. A successful submission creates a `PENDING` appointment; it is not confirmed until an authorized administrator approves it.
+```bash
+npm run build
+```
 
-## Admin portal
+## Routes
 
-Open `/admin`. Sign in with an account provisioned by the API super administrator. The dashboard lists appointment requests, supports approve/reject/reschedule for ADMIN and SUPER_ADMIN roles, and lets those roles edit weekly chamber schedules. STAFF can view appointment requests but cannot approve, reject, reschedule, or edit schedules.
+- `/` — Home
+- `/about` — Doctor profile and qualifications
+- `/chambers` — Chamber information
+- `/appointment` — Live appointment request form connected to the API
+- `/admin` — Admin login and appointment/schedule management
 
-The access token is kept in `sessionStorage` for the current browser tab and is cleared on sign-out. Use HTTPS, strong unique administrator passwords, restricted CORS, and individual accounts. Do not use shared administrator credentials.
+## Content notes
 
-## API contract
-
-The frontend expects the NestJS API described in `../kafi-gastro-api/README.md`:
-- `GET /chambers`
-- `GET /chambers/:id/slots?date=YYYY-MM-DD`
-- `POST /appointments`
-- `POST /auth/login`
-- `GET /appointments`
-- `POST /appointments/:id/approve|reject|reschedule`
-- `GET /chambers/:id/schedules`
-- `PUT /chambers/:id/schedules`
-
-All displayed appointment times use the `Asia/Dhaka` time zone. The API remains authoritative for schedule validation and double-booking prevention.
+- The hero portrait is a clearly labelled placeholder; replace it with an approved doctor photograph.
+- IBN Sina branch address and appointment phone remain marked as pending until confirmed.
+- Confirm experience duration, credentials, schedules, and all contact information before production launch.
+- Appointment requests require administrator approval; the form does not itself confirm a visit.

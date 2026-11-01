@@ -11,7 +11,16 @@
     "title": "Expert care for your digestive health.",
     "description": "Consult with an experienced gastroenterology specialist for digestive system, liver and pancreatic conditions.",
     "profile": "View profile",
-    "experience": "16 years of experience*"
+    "experience": "16 years of experience*",
+    "role": "Professor, Department of Gastroenterology",
+    "chambers": "Two Dhaka chambers",
+    "consultation": "Specialist consultation",
+    "appointment": "Appointment",
+    "appointmentSub": "Request a chamber visit",
+    "consultationSub": "Digestive, liver & pancreatic care",
+    "slide2Eyebrow": "Endoscopy & specialist care",
+    "slide2Title": "Trusted specialist guidance for digestive health.",
+    "slide2Description": "Specialist consultation and procedure-related expertise for digestive system, liver and pancreatic conditions."
   },
   "about": {
     "eyebrow": "About the professor",
@@ -55,6 +64,42 @@
     "demo": "Demo form only. It is not connected to a live booking service; no information is transmitted."
   },
   "footer": {
-    "disclaimer": "Medical information is educational and does not replace professional consultation."
+    "disclaimer": "Medical information is educational and does not replace professional consultation.",
+    "explore": "Explore",
+    "home": "Home",
+    "about": "About the professor",
+    "chambers": "Chambers",
+    "appointment": "Appointment",
+    "chamberInfo": "Chamber information",
+    "location": "Dhanmondi, Dhaka",
+    "days": "Saturday – Wednesday",
+    "brandSpecialty": "Gastroenterology Specialist",
+    "brandDescription": "Gastroenterology · Digestive system · Liver · Pancreas"
+  },
+  "home": {
+    "statsExperience": "Years of experience*",
+    "statsChambers": "Dhaka chambers",
+    "statsDays": "Visiting days / week",
+    "expertiseEyebrow": "Areas of expertise",
+    "expertiseTitle": "Focused care across digestive health",
+    "expertiseDescription": "Specialist consultation and procedure-related expertise. Individual care decisions are made by the treating clinician.",
+    "digestiveDesc": "Specialist consultation for digestive system conditions.",
+    "liverDesc": "Assessment and specialist care for liver-related conditions.",
+    "pancreasDesc": "Consultation for pancreatic and related digestive conditions.",
+    "endoscopyDesc": "Professional expertise in therapeutic endoscopic procedures.",
+    "ercpDesc": "Expertise in ERCP and related interventional procedures.",
+    "consultationDesc": "Consultation based on clinical assessment and individual needs.",
+    "appointmentEyebrow": "Online appointment request",
+    "appointmentTitle": "Take the next step towards a specialist consultation.",
+    "appointmentDescription": "Choose a chamber and request a suitable appointment time. Your request remains pending until confirmed by the chamber.",
+    "appointmentButton": "Request appointment",
+    "visitingTitle": "Visiting hours",
+    "visitingText": "Saturday to Wednesday at the currently listed chamber times. Please confirm before visiting.",
+    "locationsTitle": "Chamber locations",
+    "locationsText": "Popular Hospital and IBN Sina Hospital, Dhanmondi, Dhaka.",
+    "supportTitle": "Appointment support",
+    "supportText": "Contact Popular Hospital at 09666 787801 for appointment information.",
+    "profileExtra": "Professional expertise includes therapeutic endoscopy and ERCP-related radiological intervention.",
+    "profileButton": "View full profile"
   }
 }
