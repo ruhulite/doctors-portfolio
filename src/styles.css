@@ -18,8 +18,16 @@
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; }
 button, input, select, textarea { font: inherit; }
-.container-shell { width: min(1160px, calc(100% - 40px)); margin-inline: auto; }
+.container-shell { width: min(1480px, calc(100% - 64px)); margin-inline: auto; }
+@media (min-width: 1600px) {
+  .container-shell { width: min(1560px, calc(100% - 96px)); }
+}
+@media (min-width: 641px) and (max-width: 900px) {
+  .container-shell { width: calc(100% - 48px); }
+  .hero-wash > .container-shell { grid-template-columns: minmax(0, 1fr); }
+  .hero-wash > .container-shell > :last-child { width: min(100%, 520px); justify-self: center; }
+}
 .hero-wash { background: linear-gradient(115deg, #eaf3f1 0%, #f5f8f7 56%, #dcedea 100%); }
 .form-control { width: 100%; border: 1px solid #dce7e5; border-radius: 10px; background: #fbfdfc; padding: 12px 13px; color: #172b35; outline: none; font-size: 14px; }
 .form-control:focus { border-color: #267c78; box-shadow: 0 0 0 3px rgba(38,124,120,.12); }
-@media (max-width: 640px) { .container-shell { width: min(100% - 32px, 560px); } }
+@media (max-width: 640px) { .container-shell { width: calc(100% - 32px); } }
