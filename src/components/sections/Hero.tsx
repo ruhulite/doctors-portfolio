@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Award, CalendarDays, ChevronLeft, ChevronRight, MapPin, ShieldCheck } from "lucide-react";
+import { Award, CalendarDays, MapPin, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../ui/Button";
 
@@ -29,7 +29,6 @@ export function Hero() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const showSlide = (index: number) => setActiveSlide((index + heroSlides.length) % heroSlides.length);
   const slide = heroSlides[activeSlide];
 
   return <section className="hero-medical hero-fullbleed hero-overlay-slider">
@@ -48,9 +47,7 @@ export function Hero() {
         </div>
       </div>
       <div className="hero-slider-controls container-shell">
-        <button type="button" className="hero-slider-arrow" onClick={() => showSlide(activeSlide - 1)} aria-label="Previous slide"><ChevronLeft size={20}/></button>
-        <div className="hero-slider-dots" aria-label="Choose a slide">{heroSlides.map((item, index) => <button key={item.src} type="button" className={`hero-slider-dot${activeSlide === index ? " is-active" : ""}`} onClick={() => showSlide(index)} aria-label={`Show slide ${index + 1}`} aria-pressed={activeSlide === index}/>)}</div>
-        <button type="button" className="hero-slider-arrow" onClick={() => showSlide(activeSlide + 1)} aria-label="Next slide"><ChevronRight size={20}/></button>
+        <div className="hero-slider-dots" aria-label="Hero slides">{heroSlides.map((item, index) => <span key={item.src} className={`hero-slider-dot${activeSlide === index ? " is-active" : ""}`} aria-label={`Slide ${index + 1}`} />)}</div>
       </div>
     </div>
     <div className="container-shell relative z-10 -mb-7"><div className="quick-info">

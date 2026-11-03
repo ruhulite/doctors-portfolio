@@ -3,7 +3,7 @@ import { Header } from "./Header";
 import { Footer } from "./Footer";
 
 export function SiteLayout() {
-  return <div className="min-h-screen bg-white text-ink">
+  return <div className="relative min-h-screen bg-white text-ink">
     <Header />
     <main><Outlet /></main>
     <Footer />

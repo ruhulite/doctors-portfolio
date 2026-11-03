@@ -21,7 +21,7 @@ export function Header() {
         <nav className="hidden items-center gap-7 lg:flex">{links.map(link=><NavLink key={link.to} to={link.to} end={link.to==="/"} className={({isActive})=>`nav-link ${isActive?"active":""}`}>{link.label}</NavLink>)}</nav>
         <div className="flex shrink-0 items-center gap-2">
           <button onClick={toggleLanguage} className="rounded-full border border-line px-3 py-2 text-xs font-bold text-ink hover:border-teal" aria-label="Switch language">{i18n.language === "en" ? "বাংলা" : "English"}</button>
-          <Button to="/appointment" className="hidden sm:inline-flex"><CalendarDays size={15}/>{t("nav.book")}</Button>
+          <Button to="/appointment" className="hidden md:inline-flex"><CalendarDays size={15}/>{t("nav.book")}</Button>
           <button onClick={()=>setOpen(!open)} className="rounded-lg border border-line p-2 text-ink lg:hidden" aria-label="Toggle menu">{open?<X size={19}/>:<Menu size={19}/>}</button>
         </div>
       </div>
