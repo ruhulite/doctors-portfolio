@@ -10,84 +10,64 @@ datasource db {
 enum Role {
   SUPER_ADMIN
   ADMIN
-  STAFF
-}
-enum AppointmentStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
 }
 
-model User {
+enum VideoSource {
+  UPLOAD
+  YOUTUBE
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model AdminUser {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
   passwordHash String
-  role         Role     @default(STAFF)
+  role         Role     @default(ADMIN)
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  auditLogs    AuditLog[]
 }
 
-model Chamber {
-  id          String       @id @default(cuid())
-  name        String
-  branch      String
-  address     String?
-  phone       String?
-  active      Boolean      @default(true)
-  schedules   Schedule[]
-  appointments Appointment[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+model LandingSection {
+  id               String   @id @default(cuid())
+  key              String   @unique
+  title            String
+  enabled          Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  draftContent     Json
+  publishedContent Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
-model Schedule {
-  id                 String   @id @default(cuid())
-  chamberId          String
-  chamber            Chamber  @relation(fields: [chamberId], references: [id], onDelete: Cascade)
-  dayOfWeek          Int      // 0 Sunday ... 6 Saturday
-  startTime          String   // HH:mm, Bangladesh local time
-  endTime            String   // HH:mm, Bangladesh local time
-  slotDurationMinutes Int     @default(15)
-  active             Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  @@unique([chamberId, dayOfWeek])
-  @@index([chamberId, active])
+model Video {
+  id              String        @id @default(cuid())
+  source          VideoSource
+  titleBn         String
+  titleEn         String
+  descriptionBn   String        @default("")
+  descriptionEn   String        @default("")
+  categoryBn      String        @default("স্বাস্থ্য সচেতনতা")
+  categoryEn      String        @default("Health Awareness")
+  mediaUrl        String
+  thumbnailUrl    String?
+  captionsUrl     String?
+  durationSeconds Int
+  status          PublishStatus @default(DRAFT)
+  featured        Boolean       @default(false)
+  sortOrder       Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
-model Appointment {
-  id             String            @id @default(cuid())
-  chamberId      String
-  chamber        Chamber           @relation(fields: [chamberId], references: [id], onDelete: Restrict)
-  patientName    String
-  patientPhone   String
-  patientEmail   String?
-  note           String?           @db.VarChar(1000)
-  startsAt       DateTime          @db.Timestamptz(3)
-  endsAt         DateTime          @db.Timestamptz(3)
-  status         AppointmentStatus @default(PENDING)
-  adminNote      String?           @db.VarChar(1000)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  reviewedById   String?
-  reviewedAt     DateTime?
-  @@index([chamberId, startsAt])
-  @@index([status, startsAt])
-}
-
-model AuditLog {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
-  action     String
-  entityType String
-  entityId   String
-  metadata   Json?
-  createdAt  DateTime @default(now())
-  @@index([entityType, entityId])
-  @@index([createdAt])
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
 }

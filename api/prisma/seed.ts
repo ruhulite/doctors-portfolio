@@ -1,35 +1,17 @@
 import 'dotenv/config';
-import { PrismaClient, Role } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
-const prisma = new PrismaClient();
-async function main() {
-  const email = process.env.ADMIN_EMAIL;
-  const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password || password.length < 16) throw new Error('Set ADMIN_EMAIL and a strong ADMIN_PASSWORD (at least 16 characters) before seeding.');
-  await prisma.user.upsert({
-    where: { email: email.toLowerCase() },
-    update: {},
-    create: { name: process.env.ADMIN_NAME ?? 'System Administrator', email: email.toLowerCase(), passwordHash: await bcrypt.hash(password, 12), role: Role.SUPER_ADMIN },
-  });
-  const popular = await prisma.chamber.upsert({
-    where: { id: 'popular-dhanmondi' }, update: {},
-    create: { id: 'popular-dhanmondi', name: 'Popular Hospital', branch: 'Dhanmondi Branch', address: 'House #16, Bir Uttam M A Rab Sarak, Dhaka 1205', phone: '09666787801' },
-  });
-  const ibn = await prisma.chamber.upsert({
-    where: { id: 'ibn-sina-dhanmondi' }, update: {},
-    create: { id: 'ibn-sina-dhanmondi', name: 'IBN Sina Hospital', branch: 'Dhanmondi Branch', address: null, phone: null },
-  });
-  const visitingDays = [0, 1, 2, 3, 6]; // Sunday, Monday, Tuesday, Wednesday, Saturday
-  for (const dayOfWeek of visitingDays) {
-    await prisma.schedule.upsert({
-      where: { chamberId_dayOfWeek: { chamberId: popular.id, dayOfWeek } },
-      update: {}, create: { chamberId: popular.id, dayOfWeek, startTime: '19:00', endTime: '21:30', slotDurationMinutes: 15 },
-    });
-    await prisma.schedule.upsert({
-      where: { chamberId_dayOfWeek: { chamberId: ibn.id, dayOfWeek } },
-      update: {}, create: { chamberId: ibn.id, dayOfWeek, startTime: '12:30', endTime: '18:30', slotDurationMinutes: 15 },
-    });
-  }
-  console.log('Seed complete. Change the initial administrator password after first login.');
-}
-main().finally(() => prisma.$disconnect());
+import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
+const db=new PrismaClient();
+const sections=[
+{key:'hero',title:'Hero / পরিচিতি',sortOrder:1,content:{headingBn:'অধ্যাপক ডা. মুহাম্মদ আব্দুল্লাহেল কাফি',headingEn:'Professor Dr. Muhammad Abdullahel Kafi',subtitleBn:'গ্যাস্ট্রোএন্টারোলজি বিশেষজ্ঞ',subtitleEn:'Gastroenterology Specialist',bodyBn:'পরিপাকতন্ত্র, লিভার ও অগ্ন্যাশয় রোগের চিকিৎসা এবং থেরাপিউটিক এন্ডোস্কোপি ও ERCP বিশেষজ্ঞ।',bodyEn:'Specialist in digestive system, liver and pancreas care, therapeutic endoscopy and ERCP.',imageUrl:'/images/hero-1.jpg'}},
+{key:'about',title:'About / পরিচিতি',sortOrder:2,content:{headingBn:'চিকিৎসক পরিচিতি',headingEn:'About the Doctor',bodyBn:'অধ্যাপক, গ্যাস্ট্রোএন্টারোলজি বিভাগ। সাবেক কনসালট্যান্ট, ঢাকা মেডিকেল কলেজ ও হাসপাতাল।',bodyEn:'Professor, Department of Gastroenterology. Former Consultant, Dhaka Medical College & Hospital.',imageUrl:'/images/doctor-profile.png'}},
+{key:'qualifications',title:'Qualifications / যোগ্যতা',sortOrder:3,content:{headingBn:'শিক্ষাগত যোগ্যতা',headingEn:'Qualifications',items:[{titleBn:'এমবিবিএস',titleEn:'MBBS'},{titleBn:'এমসিপিএস (মেডিসিন)',titleEn:'MCPS (Medicine)'},{titleBn:'এফসিপিএস (গ্যাস্ট্রোএন্টারোলজি)',titleEn:'FCPS (Gastroenterology)'}]}},
+{key:'experience',title:'Experience / অভিজ্ঞতা',sortOrder:4,content:{headingBn:'পেশাগত অভিজ্ঞতা',headingEn:'Professional Experience',items:[{titleBn:'অধ্যাপক',titleEn:'Professor',descriptionBn:'গ্যাস্ট্রোএন্টারোলজি বিভাগ',descriptionEn:'Department of Gastroenterology'},{titleBn:'সাবেক কনসালট্যান্ট',titleEn:'Former Consultant',descriptionBn:'ঢাকা মেডিকেল কলেজ ও হাসপাতাল',descriptionEn:'Dhaka Medical College & Hospital'}]}},
+{key:'specializations',title:'Specializations / বিশেষজ্ঞতা',sortOrder:5,content:{headingBn:'বিশেষজ্ঞ সেবা',headingEn:'Areas of Expertise',items:[{titleBn:'পরিপাকতন্ত্র',titleEn:'Digestive System'},{titleBn:'লিভার',titleEn:'Liver'},{titleBn:'অগ্ন্যাশয়',titleEn:'Pancreas'},{titleBn:'থেরাপিউটিক এন্ডোস্কোপি',titleEn:'Therapeutic Endoscopy'},{titleBn:'ERCP',titleEn:'ERCP'}]}},
+{key:'chambers',title:'Chambers / চেম্বার',sortOrder:6,content:{headingBn:'চেম্বার ও কর্মস্থল',headingEn:'Chambers & Locations',items:[{titleBn:'পপুলার হাসপাতাল, ধানমন্ডি',titleEn:'Popular Hospital, Dhanmondi',descriptionBn:'বাড়ি #১৬, বীর উত্তম এম এ রব সড়ক, ঢাকা ১২০৫',descriptionEn:'House #16, Bir Uttam M A Rab Sarak, Dhaka 1205',metaBn:'শনিবার–বুধবার · সন্ধ্যা ৭টা–৯:৩০টা',metaEn:'Saturday–Wednesday · 7:00–9:30 PM'},{titleBn:'ইবনে সিনা হাসপাতাল, ধানমন্ডি',titleEn:'IBN Sina Hospital, Dhanmondi',descriptionBn:'শনিবার–বুধবার · দুপুর ১২:৩০টা–সন্ধ্যা ৬:৩০টা',descriptionEn:'Saturday–Wednesday · 12:30–6:30 PM'}]}},
+{key:'contact',title:'Contact / যোগাযোগ',sortOrder:7,content:{headingBn:'যোগাযোগ',headingEn:'Contact',bodyBn:'চেম্বার ও যোগাযোগের তথ্যের জন্য হাসপাতালের সঙ্গে যোগাযোগ করুন।',bodyEn:'Please contact the hospitals for chamber and contact information.',phone:'09666787801',addressBn:'ঢাকা, বাংলাদেশ',addressEn:'Dhaka, Bangladesh'}},
+{key:'branding',title:'Website Branding / ব্র্যান্ডিং',sortOrder:0,content:{nameBn:'অধ্যাপক ডা. মুহাম্মদ আব্দুল্লাহেল কাফি',nameEn:'Professor Dr. Muhammad Abdullahel Kafi',subtitleBn:'গ্যাস্ট্রোএন্টারোলজি বিশেষজ্ঞ',subtitleEn:'Gastroenterology Specialist',logoText:'MK'}},
+{key:'videoSection',title:'Video Section / ভিডিও',sortOrder:98,content:{headingBn:'স্বাস্থ্য সচেতনতা ও শিক্ষামূলক ভিডিও',headingEn:'Health Awareness & Educational Videos',subtitleBn:'স্বাস্থ্য সম্পর্কে নির্ভরযোগ্য তথ্য ও সচেতনতামূলক ভিডিও।',subtitleEn:'Educational videos to support informed health awareness.'}},
+{key:'seo',title:'SEO Settings / এসইও',sortOrder:99,content:{metaTitleBn:'অধ্যাপক ডা. মুহাম্মদ আব্দুল্লাহেল কাফি | গ্যাস্ট্রোএন্টারোলজি',metaTitleEn:'Professor Dr. Muhammad Abdullahel Kafi | Gastroenterology',metaDescriptionBn:'গ্যাস্ট্রোএন্টারোলজি, লিভার ও পরিপাকতন্ত্র বিষয়ে পেশাগত পরিচিতি ও স্বাস্থ্যশিক্ষা।',metaDescriptionEn:'Professional profile and health education in gastroenterology, liver and digestive health.',keywordsBn:'গ্যাস্ট্রোএন্টারোলজি, লিভার, পরিপাকতন্ত্র',keywordsEn:'gastroenterology, liver, digestive health'}}
+];
+async function main(){const email=process.env.ADMIN_EMAIL;const password=process.env.ADMIN_PASSWORD;if(!email||!password||password.length<12)throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD (at least 12 characters) before seeding.');const hash=await bcrypt.hash(password,12);await db.adminUser.upsert({where:{email:email.toLowerCase()},update:{name:process.env.ADMIN_NAME||'Super Admin',passwordHash:hash,role:'SUPER_ADMIN',active:true},create:{name:process.env.ADMIN_NAME||'Super Admin',email:email.toLowerCase(),passwordHash:hash,role:'SUPER_ADMIN'}});for(const s of sections){await db.landingSection.upsert({where:{key:s.key},update:{title:s.title,sortOrder:s.sortOrder,draftContent:s.content},create:{key:s.key,title:s.title,sortOrder:s.sortOrder,draftContent:s.content,publishedContent:s.content}})}console.log('Seed completed. Change the initial password after first login.')}main().finally(()=>db.$disconnect());

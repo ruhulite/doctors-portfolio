@@ -2,9 +2,7 @@
   "nav": {
     "home": "Home",
     "about": "About",
-    "chambers": "Chambers",
-    "appointment": "Appointment",
-    "book": "Book appointment"
+    "chambers": "Chambers"
   },
   "hero": {
     "eyebrow": "Expert gastroenterology care",
@@ -15,8 +13,6 @@
     "role": "Professor, Department of Gastroenterology",
     "chambers": "Two Dhaka chambers",
     "consultation": "Specialist consultation",
-    "appointment": "Appointment",
-    "appointmentSub": "Request a chamber visit",
     "consultationSub": "Digestive, liver & pancreatic care",
     "slide2Eyebrow": "Endoscopy & specialist care",
     "slide2Title": "Trusted specialist guidance for digestive health.",
@@ -44,7 +40,6 @@
     "ibn": "IBN Sina Hospital",
     "branch": "Dhanmondi Branch, Dhaka",
     "popularAddress": "House #16, Bir Uttam M A Rab Sarak, Dhaka 1205",
-    "phone": "Appointment phone",
     "popularHours": "7:00 PM – 9:30 PM",
     "ibnHours": "12:30 PM – 6:30 PM",
     "days": "Saturday, Sunday, Monday, Tuesday & Wednesday",
@@ -52,24 +47,12 @@
     "phonePending": "Hospital contact number to be added",
     "verify": "Please contact the hospital to confirm availability before visiting."
   },
-  "booking": {
-    "title": "Request an appointment",
-    "description": "Choose your preferred chamber and date. The hospital or chamber team must confirm your appointment.",
-    "name": "Patient name",
-    "phone": "Mobile number",
-    "chamber": "Preferred chamber",
-    "date": "Preferred date",
-    "notes": "Additional note (optional)",
-    "submit": "Submit request",
-    "demo": "Demo form only. It is not connected to a live booking service; no information is transmitted."
-  },
   "footer": {
     "disclaimer": "Medical information is educational and does not replace professional consultation.",
     "explore": "Explore",
     "home": "Home",
     "about": "About the professor",
     "chambers": "Chambers",
-    "appointment": "Appointment",
     "chamberInfo": "Chamber information",
     "location": "Dhanmondi, Dhaka",
     "days": "Saturday – Wednesday",
@@ -89,39 +72,26 @@
     "endoscopyDesc": "Professional expertise in therapeutic endoscopic procedures.",
     "ercpDesc": "Expertise in ERCP and related interventional procedures.",
     "consultationDesc": "Consultation based on clinical assessment and individual needs.",
-    "appointmentEyebrow": "Online appointment request",
-    "appointmentTitle": "Take the next step towards a specialist consultation.",
-    "appointmentDescription": "Choose a chamber and request a suitable appointment time. Your request remains pending until confirmed by the chamber.",
-    "appointmentButton": "Request appointment",
     "visitingTitle": "Visiting hours",
     "visitingText": "Saturday to Wednesday at the currently listed chamber times. Please confirm before visiting.",
     "locationsTitle": "Chamber locations",
     "locationsText": "Popular Hospital and IBN Sina Hospital, Dhanmondi, Dhaka.",
-    "supportTitle": "Appointment support",
-    "supportText": "Contact Popular Hospital at 09666 787801 for appointment information.",
     "profileExtra": "Professional expertise includes therapeutic endoscopy and ERCP-related radiological intervention.",
     "profileButton": "View full profile"
   },
   "videos": {
-    "eyebrow": "Health Awareness & Education",
-    "title": "Learn more about your health",
-    "description": "Watch educational videos and learn about digestive health, liver diseases, healthy habits and available medical procedures.",
+    "eyebrow": "Learn & stay informed",
+    "title": "Health awareness & educational videos",
+    "description": "Watch educational videos about digestive health, liver and pancreatic conditions, prevention and available care.",
     "play": "Play video",
-    "visitChannel": "Visit our YouTube channel",
-    "disclaimer": "These videos are for educational purposes only and do not replace professional medical advice.",
+    "emptyTitle": "Educational videos coming soon",
+    "emptyDescription": "Awareness and educational videos will be added here. Please check back for new content.",
     "categories": {
-      "digestive": "Digestive Health",
-      "liver": "Liver Health",
-      "lifestyle": "Healthy Lifestyle"
+      "digestive": "Digestive health"
     },
     "items": {
-      "digestiveTitle": "Understanding Digestive Health",
-      "digestiveDescription": "Learn about digestive health and common digestive system concerns.",
-      "liverTitle": "Taking Care of Your Liver",
-      "liverDescription": "Understand the importance of liver health and preventive care.",
-      "lifestyleTitle": "Healthy Habits for Better Health",
-      "lifestyleDescription": "Explore everyday habits that support general health and wellbeing."
+      "digestiveTitle": "Understanding digestive health",
+      "digestiveDescription": "An educational overview of digestive health and when to seek professional advice."
     }
   }
-
 }

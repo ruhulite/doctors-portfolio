@@ -154,124 +154,20 @@ body:has(.hero-medical) .site-header button { color:#fff; border-color:rgba(255,
 @media (prefers-reduced-motion:reduce) { .hero-overlay-slider .hero-slide-image,.hero-overlay-slider .hero-copy-fade { animation:none; } }
 
 
+/* Health awareness and educational video section */
+.health-videos-section { background:linear-gradient(180deg,#f3f8fa 0%,#ffffff 100%); }
+.health-video-card { overflow:hidden; border:1px solid #e0e9ee; border-radius:10px 28px 10px 28px; background:#fff; box-shadow:0 10px 28px rgba(18,59,88,.06); transition:transform .2s,box-shadow .2s; }
+.health-video-card:hover { transform:translateY(-4px); box-shadow:0 18px 36px rgba(18,59,88,.11); }
+.health-video-frame { position:relative; aspect-ratio:16/9; overflow:hidden; background:linear-gradient(135deg,#123b58,#087c78); }
+.health-video-frame iframe { display:block; width:100%; height:100%; border:0; }
+.health-video-play { display:flex; width:100%; height:100%; align-items:center; justify-content:center; gap:12px; color:#fff; font-size:13px; font-weight:800; background:radial-gradient(circle at 70% 20%,rgba(29,210,200,.36),transparent 38%),linear-gradient(135deg,#123b58,#087c78); cursor:pointer; transition:filter .2s; }
+.health-video-play:hover { filter:brightness(1.12); }
+.health-video-play-icon { display:grid; width:58px; height:58px; place-items:center; padding-left:3px; border:1px solid rgba(255,255,255,.65); border-radius:50%; background:rgba(255,255,255,.16); backdrop-filter:blur(8px); }
+.health-video-category { display:inline-flex; border-radius:999px; padding:6px 10px; background:#e5f7f5; color:#087c78; font-size:10px; font-weight:800; }
+.health-videos-empty { display:flex; max-width:680px; margin-inline:auto; flex-direction:column; align-items:center; border:1px dashed #b9d9d8; border-radius:12px 32px 12px 32px; padding:38px 24px; background:rgba(255,255,255,.8); text-align:center; }
+.health-videos-empty-icon { display:grid; width:54px; height:54px; place-items:center; border-radius:50%; background:#e5f7f5; color:#087c78; }
+.health-videos-empty h3 { margin-top:16px; color:#173246; font-size:18px; font-weight:850; }
+.health-videos-empty p { max-width:480px; margin-top:8px; color:#6b7f8d; font-size:13px; line-height:1.8; }
+@media (max-width:700px) { .health-videos-empty { padding:30px 18px; } .health-video-card { border-radius:8px 22px 8px 22px; } }
 
-
-
-/* ========================================
-   HEALTH AWARENESS & EDUCATIONAL VIDEOS
-======================================== */
-
-.health-videos-section {
-  background: #f6f9fb;
-}
-
-.health-video-card {
-  overflow: hidden;
-  border: 1px solid #dce7ed;
-  border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 12px 30px rgba(18, 59, 88, 0.06);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.health-video-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 18px 38px rgba(18, 59, 88, 0.12);
-}
-
-.health-video-player {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  background: #123b58;
-}
-
-.health-video-player iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
-}
-
-.health-video-thumbnail {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border: 0;
-  cursor: pointer;
-  background: #123b58;
-}
-
-.health-video-thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.35s ease;
-}
-
-.health-video-thumbnail:hover img {
-  transform: scale(1.05);
-}
-
-.health-video-play {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  display: grid;
-  width: 58px;
-  height: 58px;
-  place-items: center;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: #1dd2c8;
-  color: #123b58;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.health-video-thumbnail:hover .health-video-play {
-  background: #087c78;
-  color: #ffffff;
-}
-
-.health-video-category {
-  display: inline-flex;
-  padding: 6px 11px;
-  border-radius: 30px;
-  background: #e5f3f2;
-  color: #087c78;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.health-video-channel {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  padding: 12px 22px;
-  border-radius: 8px;
-  background: #1dd2c8;
-  color: #123b58;
-  font-size: 13px;
-  font-weight: 800;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.health-video-channel:hover {
-  background: #087c78;
-  color: #ffffff;
-}
-
-@media (max-width: 640px) {
-  .health-video-card:hover {
-    transform: none;
-  }
-
-  .health-video-play {
-    width: 50px;
-    height: 50px;
-  }
-}
+.skip-link{position:absolute;left:12px;top:-60px;z-index:1000;padding:12px 16px;background:#fff;color:#123b46;border:2px solid #123b46;border-radius:8px}.skip-link:focus{top:12px}a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #087c78;outline-offset:3px}html{scroll-behavior:smooth;scroll-padding-top:100px}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
