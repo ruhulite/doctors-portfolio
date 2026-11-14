@@ -101,5 +101,27 @@
     "supportText": "Contact Popular Hospital at 09666 787801 for appointment information.",
     "profileExtra": "Professional expertise includes therapeutic endoscopy and ERCP-related radiological intervention.",
     "profileButton": "View full profile"
+  },
+  "videos": {
+    "eyebrow": "Health Awareness & Education",
+    "title": "Learn more about your health",
+    "description": "Watch educational videos and learn about digestive health, liver diseases, healthy habits and available medical procedures.",
+    "play": "Play video",
+    "visitChannel": "Visit our YouTube channel",
+    "disclaimer": "These videos are for educational purposes only and do not replace professional medical advice.",
+    "categories": {
+      "digestive": "Digestive Health",
+      "liver": "Liver Health",
+      "lifestyle": "Healthy Lifestyle"
+    },
+    "items": {
+      "digestiveTitle": "Understanding Digestive Health",
+      "digestiveDescription": "Learn about digestive health and common digestive system concerns.",
+      "liverTitle": "Taking Care of Your Liver",
+      "liverDescription": "Understand the importance of liver health and preventive care.",
+      "lifestyleTitle": "Healthy Habits for Better Health",
+      "lifestyleDescription": "Explore everyday habits that support general health and wellbeing."
+    }
   }
+
 }
