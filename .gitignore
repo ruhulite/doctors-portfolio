@@ -8,3 +8,6 @@ api/dist
 api/.env
 api/uploads/*
 !api/uploads/.gitkeep
+
+commands-file.txt
+content.docx

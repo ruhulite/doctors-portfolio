@@ -1,17 +1,52 @@
+
+import { PrismaClient, Role } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
-const db=new PrismaClient();
-const sections=[
-{key:'hero',title:'Hero / পরিচিতি',sortOrder:1,content:{headingBn:'অধ্যাপক ডা. মুহাম্মদ আব্দুল্লাহেল কাফি',headingEn:'Professor Dr. Muhammad Abdullahel Kafi',subtitleBn:'গ্যাস্ট্রোএন্টারোলজি বিশেষজ্ঞ',subtitleEn:'Gastroenterology Specialist',bodyBn:'পরিপাকতন্ত্র, লিভার ও অগ্ন্যাশয় রোগের চিকিৎসা এবং থেরাপিউটিক এন্ডোস্কোপি ও ERCP বিশেষজ্ঞ।',bodyEn:'Specialist in digestive system, liver and pancreas care, therapeutic endoscopy and ERCP.',imageUrl:'/images/hero-1.jpg'}},
-{key:'about',title:'About / পরিচিতি',sortOrder:2,content:{headingBn:'চিকিৎসক পরিচিতি',headingEn:'About the Doctor',bodyBn:'অধ্যাপক, গ্যাস্ট্রোএন্টারোলজি বিভাগ। সাবেক কনসালট্যান্ট, ঢাকা মেডিকেল কলেজ ও হাসপাতাল।',bodyEn:'Professor, Department of Gastroenterology. Former Consultant, Dhaka Medical College & Hospital.',imageUrl:'/images/doctor-profile.png'}},
-{key:'qualifications',title:'Qualifications / যোগ্যতা',sortOrder:3,content:{headingBn:'শিক্ষাগত যোগ্যতা',headingEn:'Qualifications',items:[{titleBn:'এমবিবিএস',titleEn:'MBBS'},{titleBn:'এমসিপিএস (মেডিসিন)',titleEn:'MCPS (Medicine)'},{titleBn:'এফসিপিএস (গ্যাস্ট্রোএন্টারোলজি)',titleEn:'FCPS (Gastroenterology)'}]}},
-{key:'experience',title:'Experience / অভিজ্ঞতা',sortOrder:4,content:{headingBn:'পেশাগত অভিজ্ঞতা',headingEn:'Professional Experience',items:[{titleBn:'অধ্যাপক',titleEn:'Professor',descriptionBn:'গ্যাস্ট্রোএন্টারোলজি বিভাগ',descriptionEn:'Department of Gastroenterology'},{titleBn:'সাবেক কনসালট্যান্ট',titleEn:'Former Consultant',descriptionBn:'ঢাকা মেডিকেল কলেজ ও হাসপাতাল',descriptionEn:'Dhaka Medical College & Hospital'}]}},
-{key:'specializations',title:'Specializations / বিশেষজ্ঞতা',sortOrder:5,content:{headingBn:'বিশেষজ্ঞ সেবা',headingEn:'Areas of Expertise',items:[{titleBn:'পরিপাকতন্ত্র',titleEn:'Digestive System'},{titleBn:'লিভার',titleEn:'Liver'},{titleBn:'অগ্ন্যাশয়',titleEn:'Pancreas'},{titleBn:'থেরাপিউটিক এন্ডোস্কোপি',titleEn:'Therapeutic Endoscopy'},{titleBn:'ERCP',titleEn:'ERCP'}]}},
-{key:'chambers',title:'Chambers / চেম্বার',sortOrder:6,content:{headingBn:'চেম্বার ও কর্মস্থল',headingEn:'Chambers & Locations',items:[{titleBn:'পপুলার হাসপাতাল, ধানমন্ডি',titleEn:'Popular Hospital, Dhanmondi',descriptionBn:'বাড়ি #১৬, বীর উত্তম এম এ রব সড়ক, ঢাকা ১২০৫',descriptionEn:'House #16, Bir Uttam M A Rab Sarak, Dhaka 1205',metaBn:'শনিবার–বুধবার · সন্ধ্যা ৭টা–৯:৩০টা',metaEn:'Saturday–Wednesday · 7:00–9:30 PM'},{titleBn:'ইবনে সিনা হাসপাতাল, ধানমন্ডি',titleEn:'IBN Sina Hospital, Dhanmondi',descriptionBn:'শনিবার–বুধবার · দুপুর ১২:৩০টা–সন্ধ্যা ৬:৩০টা',descriptionEn:'Saturday–Wednesday · 12:30–6:30 PM'}]}},
-{key:'contact',title:'Contact / যোগাযোগ',sortOrder:7,content:{headingBn:'যোগাযোগ',headingEn:'Contact',bodyBn:'চেম্বার ও যোগাযোগের তথ্যের জন্য হাসপাতালের সঙ্গে যোগাযোগ করুন।',bodyEn:'Please contact the hospitals for chamber and contact information.',phone:'09666787801',addressBn:'ঢাকা, বাংলাদেশ',addressEn:'Dhaka, Bangladesh'}},
-{key:'branding',title:'Website Branding / ব্র্যান্ডিং',sortOrder:0,content:{nameBn:'অধ্যাপক ডা. মুহাম্মদ আব্দুল্লাহেল কাফি',nameEn:'Professor Dr. Muhammad Abdullahel Kafi',subtitleBn:'গ্যাস্ট্রোএন্টারোলজি বিশেষজ্ঞ',subtitleEn:'Gastroenterology Specialist',logoText:'MK'}},
-{key:'videoSection',title:'Video Section / ভিডিও',sortOrder:98,content:{headingBn:'স্বাস্থ্য সচেতনতা ও শিক্ষামূলক ভিডিও',headingEn:'Health Awareness & Educational Videos',subtitleBn:'স্বাস্থ্য সম্পর্কে নির্ভরযোগ্য তথ্য ও সচেতনতামূলক ভিডিও।',subtitleEn:'Educational videos to support informed health awareness.'}},
-{key:'seo',title:'SEO Settings / এসইও',sortOrder:99,content:{metaTitleBn:'অধ্যাপক ডা. মুহাম্মদ আব্দুল্লাহেল কাফি | গ্যাস্ট্রোএন্টারোলজি',metaTitleEn:'Professor Dr. Muhammad Abdullahel Kafi | Gastroenterology',metaDescriptionBn:'গ্যাস্ট্রোএন্টারোলজি, লিভার ও পরিপাকতন্ত্র বিষয়ে পেশাগত পরিচিতি ও স্বাস্থ্যশিক্ষা।',metaDescriptionEn:'Professional profile and health education in gastroenterology, liver and digestive health.',keywordsBn:'গ্যাস্ট্রোএন্টারোলজি, লিভার, পরিপাকতন্ত্র',keywordsEn:'gastroenterology, liver, digestive health'}}
-];
-async function main(){const email=process.env.ADMIN_EMAIL;const password=process.env.ADMIN_PASSWORD;if(!email||!password||password.length<12)throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD (at least 12 characters) before seeding.');const hash=await bcrypt.hash(password,12);await db.adminUser.upsert({where:{email:email.toLowerCase()},update:{name:process.env.ADMIN_NAME||'Super Admin',passwordHash:hash,role:'SUPER_ADMIN',active:true},create:{name:process.env.ADMIN_NAME||'Super Admin',email:email.toLowerCase(),passwordHash:hash,role:'SUPER_ADMIN'}});for(const s of sections){await db.landingSection.upsert({where:{key:s.key},update:{title:s.title,sortOrder:s.sortOrder,draftContent:s.content},create:{key:s.key,title:s.title,sortOrder:s.sortOrder,draftContent:s.content,publishedContent:s.content}})}console.log('Seed completed. Change the initial password after first login.')}main().finally(()=>db.$disconnect());
+
+const prisma = new PrismaClient();
+
+async function main() {
+    const name = process.env.SUPER_ADMIN_NAME;
+    const email = process.env.SUPER_ADMIN_EMAIL?.trim().toLowerCase();
+    const password = process.env.SUPER_ADMIN_PASSWORD;
+
+    if (!name || !email || !password) {
+        throw new Error(
+            'Missing SUPER_ADMIN_NAME, SUPER_ADMIN_EMAIL, or SUPER_ADMIN_PASSWORD in .env',
+        );
+    }
+
+    if (password.length < 12) {
+        throw new Error('Super Admin password must be at least 12 characters.');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const admin = await prisma.adminUser.upsert({
+        where: { email },
+        update: {
+            name,
+            passwordHash,
+            role: Role.SUPER_ADMIN,
+            active: true,
+        },
+        create: {
+            name,
+            email,
+            passwordHash,
+            role: Role.SUPER_ADMIN,
+            active: true,
+        },
+    });
+
+    console.log(`Super Admin account ready: ${admin.email}`);
+}
+
+main()
+    .catch((error) => {
+        console.error('Super Admin seeding failed:', error);
+        process.exitCode = 1;
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
