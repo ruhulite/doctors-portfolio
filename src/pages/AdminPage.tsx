@@ -210,30 +210,46 @@ export function AdminPage() {
    }
 
    if (editingVideoId) {
-    // Existing backend update endpoint edits metadata only.
+    // Update existing video metadata and optional thumbnail.
+    // FormData allows the backend to receive the uploaded image.
+    const form = new FormData();
+
+    const metadata = {
+     titleBn: video.titleBn,
+     titleEn: video.titleEn,
+     descriptionBn: video.descriptionBn,
+     descriptionEn: video.descriptionEn,
+     categoryBn: video.categoryBn,
+     categoryEn: video.categoryEn,
+     featured: video.featured,
+    };
+
+    Object.entries(metadata).forEach(([key, value]) => {
+     form.append(key, String(value));
+    });
+
+    // Only append a thumbnail when a new one was selected.
+    // If omitted, the backend should retain the existing thumbnail.
+    if (thumbnail) {
+     form.append("thumbnail", thumbnail);
+    }
+
     await api(
         `/admin/videos/${editingVideoId}`,
         {
          method: "PUT",
-         body: JSON.stringify({
-          titleBn: video.titleBn,
-          titleEn: video.titleEn,
-          descriptionBn: video.descriptionBn,
-          descriptionEn: video.descriptionEn,
-          categoryBn: video.categoryBn,
-          categoryEn: video.categoryEn,
-          featured: video.featured,
-         }),
+         body: form,
         },
         session.accessToken
     );
 
     setEditingVideoId(null);
    } else {
+    // Create a new video.
     const form = new FormData();
 
-    Object.entries(video).forEach(([k, v]) => {
-     form.append(k, String(v));
+    Object.entries(video).forEach(([key, value]) => {
+     form.append(key, String(value));
     });
 
     if (file) form.append("video", file);
@@ -437,13 +453,19 @@ export function AdminPage() {
       </div>
 
       {error && (
-          <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          <p
+              role="alert"
+              className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700"
+          >
            {error}
           </p>
       )}
 
       {notice && (
-          <p role="status" className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-800">
+          <p
+              role="status"
+              className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-800"
+          >
            {notice}
           </p>
       )}
@@ -748,6 +770,13 @@ export function AdminPage() {
                  onChange={(e) => setThumbnail(e.target.files?.[0] || null)}
                  className="rounded-lg border border-line p-3"
              />
+
+             {editingVideoId && (
+                 <span className="text-xs text-muted">
+                  Select a new image only if you want to replace the current
+                  thumbnail. Leave this empty to keep the existing one.
+                </span>
+             )}
             </label>
 
             {video.source === "UPLOAD" && (

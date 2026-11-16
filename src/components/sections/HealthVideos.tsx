@@ -9,6 +9,8 @@ const apiOrigin = (
     import.meta.env.VITE_API_URL || "http://localhost:4000/api"
 ).replace(/\/api\/?$/, "");
 
+const DESCRIPTION_LIMIT = 160;
+
 type HealthVideosProps = {
     preview?: boolean;
 };
@@ -76,6 +78,9 @@ export function HealthVideos({ preview = false }: HealthVideosProps) {
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [active, setActive] = useState<string | null>(null);
     const [copy, setCopy] = useState<any>({});
+    const [expandedDescriptions, setExpandedDescriptions] = useState<
+        Record<string, boolean>
+    >({});
 
     useEffect(() => {
         let token: string | undefined;
@@ -123,6 +128,13 @@ export function HealthVideos({ preview = false }: HealthVideosProps) {
     }, [preview]);
 
     const bn = i18n.language !== "en";
+
+    function toggleDescription(videoId: string) {
+        setExpandedDescriptions((previous) => ({
+            ...previous,
+            [videoId]: !previous[videoId],
+        }));
+    }
 
     function renderPlayer(video: VideoItem) {
         const title = bn ? video.titleBn : video.titleEn;
@@ -261,89 +273,134 @@ export function HealthVideos({ preview = false }: HealthVideosProps) {
 
                 {videos.length > 0 ? (
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                        {videos.map((video) => (
-                            <article
-                                className="health-video-card"
-                                key={video.id}
-                            >
-                                <div className="health-video-frame">
-                                    {active === video.id ? (
-                                        renderPlayer(video)
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            className="health-video-play"
-                                            onClick={() =>
-                                                setActive(video.id)
-                                            }
-                                            aria-label={`${
-                                                bn
-                                                    ? "ভিডিও চালান"
-                                                    : "Play video"
-                                            }: ${
-                                                bn
-                                                    ? video.titleBn
-                                                    : video.titleEn
-                                            }`}
-                                        >
-                                            {video.thumbnailUrl && (
-                                                <img
-                                                    src={
-                                                        video.thumbnailUrl.startsWith(
-                                                            "/"
-                                                        )
-                                                            ? `${apiOrigin}${video.thumbnailUrl}`
-                                                            : video.thumbnailUrl
-                                                    }
-                                                    alt=""
-                                                    className="absolute inset-0 h-full w-full object-cover"
-                                                />
-                                            )}
+                        {videos.map((video) => {
+                            const description = bn
+                                ? video.descriptionBn
+                                : video.descriptionEn;
 
-                                            <span className="health-video-play-icon relative z-10">
-                                                <Play
-                                                    size={24}
-                                                    fill="currentColor"
-                                                />
-                                            </span>
-                                        </button>
-                                    )}
-                                </div>
+                            const isLong =
+                                description.length > DESCRIPTION_LIMIT;
 
-                                <div className="p-5">
-                                    <span className="health-video-category">
-                                        {bn
-                                            ? video.categoryBn
-                                            : video.categoryEn}
-                                    </span>
+                            const isExpanded =
+                                expandedDescriptions[video.id] || false;
 
-                                    <h3 className="mt-2 text-lg font-extrabold">
-                                        {bn
-                                            ? video.titleBn
-                                            : video.titleEn}
-                                    </h3>
+                            const displayedDescription =
+                                isLong && !isExpanded
+                                    ? `${description
+                                        .slice(0, DESCRIPTION_LIMIT)
+                                        .trimEnd()}...`
+                                    : description;
 
-                                    <p className="mt-2 text-sm leading-7 text-muted">
-                                        {bn
-                                            ? video.descriptionBn
-                                            : video.descriptionEn}
-                                    </p>
-
-                                    {video.durationSeconds !== null &&
-                                        video.durationSeconds !== undefined && (
-                                            <p className="mt-2 text-xs text-muted">
-                                                {Math.floor(
-                                                    video.durationSeconds / 60
+                            return (
+                                <article
+                                    className="health-video-card"
+                                    key={video.id}
+                                >
+                                    <div className="health-video-frame">
+                                        {active === video.id ? (
+                                            renderPlayer(video)
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                className="health-video-play"
+                                                onClick={() =>
+                                                    setActive(video.id)
+                                                }
+                                                aria-label={`${
+                                                    bn
+                                                        ? "ভিডিও চালান"
+                                                        : "Play video"
+                                                }: ${
+                                                    bn
+                                                        ? video.titleBn
+                                                        : video.titleEn
+                                                }`}
+                                            >
+                                                {video.thumbnailUrl && (
+                                                    <img
+                                                        src={
+                                                            video.thumbnailUrl.startsWith(
+                                                                "/"
+                                                            )
+                                                                ? `${apiOrigin}${video.thumbnailUrl}`
+                                                                : video.thumbnailUrl
+                                                        }
+                                                        alt=""
+                                                        className="absolute inset-0 h-full w-full object-cover"
+                                                    />
                                                 )}
-                                                :
-                                                {String(
-                                                    video.durationSeconds % 60
-                                                ).padStart(2, "0")}
-                                            </p>
+
+                                                <span className="health-video-play-icon relative z-10">
+                                                    <Play
+                                                        size={24}
+                                                        fill="currentColor"
+                                                    />
+                                                </span>
+                                            </button>
                                         )}
-                                </div>
-                            </article>
-                        ))}
+                                    </div>
+
+                                    <div className="p-5">
+                                        <span className="health-video-category">
+                                            {bn
+                                                ? video.categoryBn
+                                                : video.categoryEn}
+                                        </span>
+
+                                        <h3 className="mt-2 text-lg font-extrabold">
+                                            {bn
+                                                ? video.titleBn
+                                                : video.titleEn}
+                                        </h3>
+
+                                        {description && (
+                                            <div className="mt-2">
+                                                <p className="text-sm leading-7 text-muted whitespace-pre-line">
+                                                    {displayedDescription}
+                                                </p>
+
+                                                {isLong && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            toggleDescription(
+                                                                video.id
+                                                            )
+                                                        }
+                                                        aria-expanded={isExpanded}
+                                                        className="mt-2 inline-flex items-center text-sm font-semibold text-teal-600 transition-colors hover:text-teal-700 hover:underline"
+                                                    >
+                                                        {bn
+                                                            ? isExpanded
+                                                                ? "কম দেখুন"
+                                                                : "আরও দেখুন"
+                                                            : isExpanded
+                                                                ? "View Less"
+                                                                : "View More"}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {video.durationSeconds !== null &&
+                                            video.durationSeconds !==
+                                            undefined && (
+                                                <p className="mt-2 text-xs text-muted">
+                                                    {Math.floor(
+                                                        video.durationSeconds /
+                                                        60
+                                                    )}
+                                                    :
+                                                    {String(
+                                                        video.durationSeconds %
+                                                        60
+                                                    ).padStart(2, "0")}
+                                                </p>
+                                            )}
+                                    </div>
+                                </article>
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="health-videos-empty">

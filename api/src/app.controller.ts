@@ -1,17 +1,49 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Req, UseGuards, UseInterceptors, UploadedFile, UploadedFiles, BadRequestException, NotFoundException, UnauthorizedException, Query } from '@nestjs/common';
-import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
+
+import {
+    Controller,
+    Get,
+    Post,
+    Put,
+    Delete,
+    Body,
+    Param,
+    UseGuards,
+    UseInterceptors,
+    UploadedFile,
+    UploadedFiles,
+    BadRequestException,
+    NotFoundException,
+    UnauthorizedException,
+} from '@nestjs/common';
+
+import {
+    FileFieldsInterceptor,
+    FileInterceptor,
+} from '@nestjs/platform-express';
+
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import { randomUUID } from 'crypto';
 import { unlink } from 'fs/promises';
 import { spawn } from 'child_process';
+
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
+
 import { PrismaService } from './prisma.service';
 import { Prisma } from '@prisma/client';
-import { AuthGuard, SuperAdminGuard, AuthRequest } from './auth';
-const uploadDir=process.env.UPLOAD_DIR||'uploads';
-const storage=diskStorage({destination:(_req,_file,cb)=>cb(null,uploadDir),filename:(_req,file,cb)=>cb(null,`${randomUUID()}${extname(file.originalname).toLowerCase()}`)});
+import { AuthGuard, SuperAdminGuard } from './auth';
+
+const uploadDir = process.env.UPLOAD_DIR || 'uploads';
+
+const storage = diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadDir),
+    filename: (_req, file, cb) =>
+        cb(
+            null,
+            `${randomUUID()}${extname(file.originalname).toLowerCase()}`,
+        ),
+});
 
 function durationOf(path: string): Promise<number> {
     return new Promise((resolve, reject) => {
@@ -47,7 +79,6 @@ function durationOf(path: string): Promise<number> {
     });
 }
 
-
 function parseVideoUrl(input: string): URL {
     try {
         const url = new URL(input.trim());
@@ -82,8 +113,22 @@ function isFacebookUrl(url: URL): boolean {
     );
 }
 
-@Controller('api') export class AppController { constructor(private db:PrismaService){}
-@Get('health') health(){return {status:'ok'}}
+@Controller('api')
+export class AppController {
+    constructor(private db: PrismaService) {}
+
+    // --------------------------------------------------
+    // HEALTH CHECK
+    // --------------------------------------------------
+
+    @Get('health')
+    health() {
+        return { status: 'ok' };
+    }
+
+    // --------------------------------------------------
+    // ADMIN IMAGE UPLOAD
+    // --------------------------------------------------
 
     @Post('admin/uploads/image')
     @UseGuards(AuthGuard)
@@ -127,11 +172,116 @@ function isFacebookUrl(url: URL): boolean {
             mimetype: file.mimetype,
         };
     }
-    @Post('auth/login') async login(@Body() body:any){const user=await this.db.adminUser.findUnique({where:{email:String(body.email||'').toLowerCase()}});if(!user||!user.active||!await bcrypt.compare(String(body.password||''),user.passwordHash))throw new UnauthorizedException('Invalid email or password');const token=jwt.sign({sub:user.id},process.env.JWT_SECRET||'',{expiresIn:'12h'});return {accessToken:token,user:{id:user.id,name:user.name,email:user.email,role:user.role}}}
-@Get('public/landing') async publicLanding(){const rows=await this.db.landingSection.findMany({where:{enabled:true},orderBy:{sortOrder:'asc'},select:{id:true,key:true,title:true,enabled:true,sortOrder:true,publishedContent:true}});return rows.filter(r=>r.publishedContent!==null)}
-@Get('public/videos') publicVideos(){return this.db.video.findMany({where:{status:'PUBLISHED'},orderBy:[{featured:'desc'},{sortOrder:'asc'},{createdAt:'desc'}]})}
-@Get('admin/sections') @UseGuards(AuthGuard) sections(){return this.db.landingSection.findMany({orderBy:{sortOrder:'asc'}})}
-@Put('admin/sections/:id/draft') @UseGuards(AuthGuard) async saveDraft(@Param('id') id:string,@Body() body:any){if(!body.content||typeof body.content!=='object')throw new BadRequestException('Content must be a JSON object');return this.db.landingSection.update({where:{id},data:{draftContent:body.content}})}
+
+    // --------------------------------------------------
+    // AUTHENTICATION
+    // --------------------------------------------------
+
+    @Post('auth/login')
+    async login(@Body() body: any) {
+        const user = await this.db.adminUser.findUnique({
+            where: {
+                email: String(body.email || '').toLowerCase(),
+            },
+        });
+
+        if (
+            !user ||
+            !user.active ||
+            !(await bcrypt.compare(
+                String(body.password || ''),
+                user.passwordHash,
+            ))
+        ) {
+            throw new UnauthorizedException('Invalid email or password');
+        }
+
+        const token = jwt.sign(
+            { sub: user.id },
+            process.env.JWT_SECRET || '',
+            { expiresIn: '12h' },
+        );
+
+        return {
+            accessToken: token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+            },
+        };
+    }
+
+    // --------------------------------------------------
+    // PUBLIC LANDING PAGE
+    // --------------------------------------------------
+
+    @Get('public/landing')
+    async publicLanding() {
+        const rows = await this.db.landingSection.findMany({
+            where: { enabled: true },
+            orderBy: { sortOrder: 'asc' },
+            select: {
+                id: true,
+                key: true,
+                title: true,
+                enabled: true,
+                sortOrder: true,
+                publishedContent: true,
+            },
+        });
+
+        return rows.filter((row) => row.publishedContent !== null);
+    }
+
+    // --------------------------------------------------
+    // PUBLIC VIDEOS
+    // --------------------------------------------------
+
+    @Get('public/videos')
+    publicVideos() {
+        return this.db.video.findMany({
+            where: { status: 'PUBLISHED' },
+            orderBy: [
+                { featured: 'desc' },
+                { sortOrder: 'asc' },
+                { createdAt: 'desc' },
+            ],
+        });
+    }
+
+    // --------------------------------------------------
+    // LANDING PAGE ADMIN
+    // --------------------------------------------------
+
+    @Get('admin/sections')
+    @UseGuards(AuthGuard)
+    sections() {
+        return this.db.landingSection.findMany({
+            orderBy: { sortOrder: 'asc' },
+        });
+    }
+
+    @Put('admin/sections/:id/draft')
+    @UseGuards(AuthGuard)
+    async saveDraft(
+        @Param('id') id: string,
+        @Body() body: any,
+    ) {
+        if (!body.content || typeof body.content !== 'object') {
+            throw new BadRequestException(
+                'Content must be a JSON object',
+            );
+        }
+
+        return this.db.landingSection.update({
+            where: { id },
+            data: {
+                draftContent: body.content,
+            },
+        });
+    }
 
     @Post('admin/sections/:id/publish')
     @UseGuards(AuthGuard, SuperAdminGuard)
@@ -145,19 +295,59 @@ function isFacebookUrl(url: URL): boolean {
         }
 
         if (section.draftContent === null) {
-            throw new BadRequestException('No draft content available to publish');
+            throw new BadRequestException(
+                'No draft content available to publish',
+            );
         }
 
         return this.db.landingSection.update({
             where: { id },
             data: {
-                publishedContent: section.draftContent as Prisma.InputJsonValue,
+                publishedContent:
+                    section.draftContent as Prisma.InputJsonValue,
             },
         });
     }
 
-    @Post('admin/sections/:id/preview') @UseGuards(AuthGuard) async previewSection(@Param('id') id:string){const s=await this.db.landingSection.findUnique({where:{id}});if(!s)throw new NotFoundException();return {...s,publishedContent:s.draftContent}}
-@Get('admin/preview/landing') @UseGuards(AuthGuard) async previewLanding(){return this.db.landingSection.findMany({where:{enabled:true},orderBy:{sortOrder:'asc'},select:{id:true,key:true,title:true,enabled:true,sortOrder:true,publishedContent:true,draftContent:true}})}
+    @Post('admin/sections/:id/preview')
+    @UseGuards(AuthGuard)
+    async previewSection(@Param('id') id: string) {
+        const section = await this.db.landingSection.findUnique({
+            where: { id },
+        });
+
+        if (!section) {
+            throw new NotFoundException();
+        }
+
+        return {
+            ...section,
+            publishedContent: section.draftContent,
+        };
+    }
+
+    @Get('admin/preview/landing')
+    @UseGuards(AuthGuard)
+    async previewLanding() {
+        return this.db.landingSection.findMany({
+            where: { enabled: true },
+            orderBy: { sortOrder: 'asc' },
+            select: {
+                id: true,
+                key: true,
+                title: true,
+                enabled: true,
+                sortOrder: true,
+                publishedContent: true,
+                draftContent: true,
+            },
+        });
+    }
+
+    // --------------------------------------------------
+    // ADMIN VIDEO PREVIEW
+    // --------------------------------------------------
+
     @Get('admin/preview/videos')
     @UseGuards(AuthGuard)
     async previewVideos() {
@@ -169,7 +359,24 @@ function isFacebookUrl(url: URL): boolean {
             ],
         });
     }
-    @Get('admin/videos') @UseGuards(AuthGuard) adminVideos(){return this.db.video.findMany({orderBy:[{createdAt:'desc'}]})}
+
+    // --------------------------------------------------
+    // ADMIN VIDEO LIST
+    // --------------------------------------------------
+
+    @Get('admin/videos')
+    @UseGuards(AuthGuard)
+    adminVideos() {
+        return this.db.video.findMany({
+            orderBy: [{ createdAt: 'desc' }],
+        });
+    }
+
+    // --------------------------------------------------
+    // CREATE VIDEO
+    // Supports:
+    // UPLOAD, YOUTUBE, FACEBOOK, EXTERNAL
+    // --------------------------------------------------
 
     @Post('admin/videos')
     @UseGuards(AuthGuard)
@@ -219,7 +426,10 @@ function isFacebookUrl(url: URL): boolean {
                             file.mimetype,
                         )
                     ) {
-                        return cb(new Error('WebVTT captions file required.'), false);
+                        return cb(
+                            new Error('WebVTT captions file required.'),
+                            false,
+                        );
                     }
 
                     cb(null, true);
@@ -363,12 +573,227 @@ function isFacebookUrl(url: URL): boolean {
         });
     }
 
-    // if(duration>180){if(source==='UPLOAD'&&files?.video?.[0]?.path)await unlink(files.video[0].path).catch(()=>{});throw new BadRequestException('Maximum video duration is 180 seconds (3 minutes)');}if(duration<1)throw new BadRequestException('Invalid video duration');const thumb=files?.thumbnail?.[0];const captions=files?.captions?.[0];return this.db.video.create({data:{source,titleBn:String(body.titleBn||''),titleEn:String(body.titleEn||''),descriptionBn:String(body.descriptionBn||''),descriptionEn:String(body.descriptionEn||''),categoryBn:String(body.categoryBn||'স্বাস্থ্য সচেতনতা'),categoryEn:String(body.categoryEn||'Health Awareness'),mediaUrl,thumbnailUrl:thumb?`/uploads/${thumb.filename}`:null,captionsUrl:captions?`/uploads/${captions.filename}`:null,durationSeconds:duration,featured:String(body.featured)==='true',status:'DRAFT'}})}
-@Put('admin/videos/:id') @UseGuards(AuthGuard) async updateVideo(@Param('id') id:string,@Body() b:any){return this.db.video.update({where:{id},data:{titleBn:String(b.titleBn||''),titleEn:String(b.titleEn||''),descriptionBn:String(b.descriptionBn||''),descriptionEn:String(b.descriptionEn||''),categoryBn:String(b.categoryBn||''),categoryEn:String(b.categoryEn||''),featured:Boolean(b.featured),sortOrder:Number(b.sortOrder||0)}})}
-    @Post('admin/videos/:id/publish') @UseGuards(AuthGuard, SuperAdminGuard) async publishVideo(@Param('id') id:string){return this.db.video.update({where:{id},data:{status:'PUBLISHED'}})}
-@Post('admin/videos/:id/unpublish') @UseGuards(AuthGuard) async unpublishVideo(@Param('id') id:string){return this.db.video.update({where:{id},data:{status:'DRAFT'}})}
-@Post('admin/videos/:id/delete') @UseGuards(AuthGuard) async deleteVideo(@Param('id') id:string){return this.db.video.delete({where:{id}})}
-@Get('admin/users') @UseGuards(AuthGuard,SuperAdminGuard) users(){return this.db.adminUser.findMany({select:{id:true,name:true,email:true,role:true,active:true,createdAt:true}})}
-@Post('admin/users') @UseGuards(AuthGuard,SuperAdminGuard) async createAdmin(@Body() b:any){if(!b.name||!b.email||String(b.password||'').length<12)throw new BadRequestException('Name, email and password (minimum 12 characters) are required');const passwordHash=await bcrypt.hash(b.password,12);return this.db.adminUser.create({data:{name:b.name,email:String(b.email).toLowerCase(),passwordHash,role:b.role==='SUPER_ADMIN'?'SUPER_ADMIN':'ADMIN'},select:{id:true,name:true,email:true,role:true,active:true}})}
-@Put('admin/sections/:id/enabled') @UseGuards(AuthGuard) toggleSection(@Param('id') id:string,@Body() b:any){return this.db.landingSection.update({where:{id},data:{enabled:Boolean(b.enabled)}})}
+    // --------------------------------------------------
+    // UPDATE VIDEO
+    // Supports multipart/form-data and optional thumbnail.
+    // Existing thumbnail remains unchanged when no new
+    // thumbnail is uploaded.
+    // --------------------------------------------------
+
+    @Put('admin/videos/:id')
+    @UseGuards(AuthGuard)
+    @UseInterceptors(
+        FileFieldsInterceptor(
+            [{ name: 'thumbnail', maxCount: 1 }],
+            {
+                storage,
+                limits: {
+                    fileSize:
+                        Number(process.env.MAX_IMAGE_MB || 5) * 1024 * 1024,
+                },
+                fileFilter: (_req, file, cb) => {
+                    const allowedTypes = [
+                        'image/jpeg',
+                        'image/png',
+                        'image/webp',
+                        'image/gif',
+                    ];
+
+                    if (!allowedTypes.includes(file.mimetype)) {
+                        return cb(
+                            new BadRequestException(
+                                'Only JPEG, PNG, WebP and GIF images are allowed.',
+                            ),
+                            false,
+                        );
+                    }
+
+                    cb(null, true);
+                },
+            },
+        ),
+    )
+    async updateVideo(
+        @Param('id') id: string,
+        @Body() body: any,
+        @UploadedFiles() files: any,
+    ) {
+        const existing = await this.db.video.findUnique({
+            where: { id },
+        });
+
+        if (!existing) {
+            throw new NotFoundException('Video not found.');
+        }
+
+        const thumbnail = files?.thumbnail?.[0];
+
+        const sortOrder =
+            body.sortOrder !== undefined
+                ? Number(body.sortOrder)
+                : existing.sortOrder;
+
+        if (!Number.isFinite(sortOrder)) {
+            if (thumbnail?.path) {
+                await unlink(thumbnail.path).catch(() => {});
+            }
+
+            throw new BadRequestException('Invalid video sort order.');
+        }
+
+        try {
+            return await this.db.video.update({
+                where: { id },
+                data: {
+                    titleBn: String(body.titleBn ?? existing.titleBn),
+                    titleEn: String(body.titleEn ?? existing.titleEn),
+
+                    descriptionBn: String(
+                        body.descriptionBn ?? existing.descriptionBn,
+                    ),
+                    descriptionEn: String(
+                        body.descriptionEn ?? existing.descriptionEn,
+                    ),
+
+                    categoryBn: String(
+                        body.categoryBn ?? existing.categoryBn,
+                    ),
+                    categoryEn: String(
+                        body.categoryEn ?? existing.categoryEn,
+                    ),
+
+                    featured:
+                        body.featured !== undefined
+                            ? String(body.featured) === 'true'
+                            : existing.featured,
+
+                    sortOrder,
+
+                    ...(thumbnail
+                        ? {
+                            thumbnailUrl: `/uploads/${thumbnail.filename}`,
+                        }
+                        : {}),
+                },
+            });
+        } catch (error) {
+            if (thumbnail?.path) {
+                await unlink(thumbnail.path).catch(() => {});
+            }
+
+            throw error;
+        }
+    }
+
+    // --------------------------------------------------
+    // PUBLISH VIDEO
+    // SUPER_ADMIN ONLY
+    // --------------------------------------------------
+
+    @Post('admin/videos/:id/publish')
+    @UseGuards(AuthGuard, SuperAdminGuard)
+    async publishVideo(@Param('id') id: string) {
+        return this.db.video.update({
+            where: { id },
+            data: { status: 'PUBLISHED' },
+        });
+    }
+
+    // --------------------------------------------------
+    // UNPUBLISH VIDEO
+    // --------------------------------------------------
+
+    @Post('admin/videos/:id/unpublish')
+    @UseGuards(AuthGuard)
+    async unpublishVideo(@Param('id') id: string) {
+        return this.db.video.update({
+            where: { id },
+            data: { status: 'DRAFT' },
+        });
+    }
+
+    // --------------------------------------------------
+    // DELETE VIDEO
+    // --------------------------------------------------
+
+    @Post('admin/videos/:id/delete')
+    @UseGuards(AuthGuard)
+    async deleteVideo(@Param('id') id: string) {
+        return this.db.video.delete({
+            where: { id },
+        });
+    }
+
+    // --------------------------------------------------
+    // ADMIN USER MANAGEMENT
+    // SUPER_ADMIN ONLY
+    // --------------------------------------------------
+
+    @Get('admin/users')
+    @UseGuards(AuthGuard, SuperAdminGuard)
+    users() {
+        return this.db.adminUser.findMany({
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                active: true,
+                createdAt: true,
+            },
+        });
+    }
+
+    @Post('admin/users')
+    @UseGuards(AuthGuard, SuperAdminGuard)
+    async createAdmin(@Body() body: any) {
+        if (
+            !body.name ||
+            !body.email ||
+            String(body.password || '').length < 12
+        ) {
+            throw new BadRequestException(
+                'Name, email and password (minimum 12 characters) are required',
+            );
+        }
+
+        const passwordHash = await bcrypt.hash(body.password, 12);
+
+        return this.db.adminUser.create({
+            data: {
+                name: body.name,
+                email: String(body.email).toLowerCase(),
+                passwordHash,
+                role:
+                    body.role === 'SUPER_ADMIN'
+                        ? 'SUPER_ADMIN'
+                        : 'ADMIN',
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                active: true,
+            },
+        });
+    }
+
+    // --------------------------------------------------
+    // ENABLE / DISABLE LANDING PAGE SECTION
+    // --------------------------------------------------
+
+    @Put('admin/sections/:id/enabled')
+    @UseGuards(AuthGuard)
+    toggleSection(
+        @Param('id') id: string,
+        @Body() body: any,
+    ) {
+        return this.db.landingSection.update({
+            where: { id },
+            data: {
+                enabled: Boolean(body.enabled),
+            },
+        });
+    }
 }

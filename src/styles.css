@@ -171,3 +171,52 @@ body:has(.hero-medical) .site-header button { color:#fff; border-color:rgba(255,
 @media (max-width:700px) { .health-videos-empty { padding:30px 18px; } .health-video-card { border-radius:8px 22px 8px 22px; } }
 
 .skip-link{position:absolute;left:12px;top:-60px;z-index:1000;padding:12px 16px;background:#fff;color:#123b46;border:2px solid #123b46;border-radius:8px}.skip-link:focus{top:12px}a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #087c78;outline-offset:3px}html{scroll-behavior:smooth;scroll-padding-top:100px}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* Multi-slide Hero carousel with synchronized image and text fades */
+.hero-overlay-slider .hero-slide-image {
+    animation: heroCarouselImageFade 1s ease both;
+}
+.hero-overlay-slider .hero-copy-fade {
+    animation: heroCarouselTextFade 0.9s ease both;
+}
+.hero-overlay-slider .hero-slider-controls {
+    gap: 14px;
+}
+.hero-overlay-slider .hero-slider-arrow {
+    flex: 0 0 auto;
+}
+.hero-overlay-slider .hero-slider-dots {
+    gap: 9px;
+}
+.hero-overlay-slider .hero-slider-dot {
+    cursor: pointer;
+}
+.hero-overlay-slider .hero-slider-dot:focus-visible,
+.hero-overlay-slider .hero-slider-arrow:focus-visible {
+    outline: 3px solid #71f3e9;
+    outline-offset: 4px;
+}
+@keyframes heroCarouselImageFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes heroCarouselTextFade {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 700px) {
+    .hero-overlay-slider .hero-slider-controls {
+        gap: 10px;
+        bottom: 18px;
+    }
+    .hero-overlay-slider .hero-slider-arrow {
+        width: 34px;
+        height: 34px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .hero-overlay-slider .hero-slide-image,
+    .hero-overlay-slider .hero-copy-fade {
+        animation: none;
+    }
+}
