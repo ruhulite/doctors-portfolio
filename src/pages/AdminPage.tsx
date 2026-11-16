@@ -11,6 +11,53 @@ import { SectionContentEditor } from "../components/admin/SectionContentEditor";
 
 const KEY = "kafi_cms_session";
 
+const ADMIN_SECTION_LABELS: Record<string, string> = {
+ hero: "Hero",
+ stats: "পরিসংখ্যান / Statistics",
+ about: "চিকিৎসক পরিচিতি / Doctor Profile",
+ specializations: "বিশেষজ্ঞতার ক্ষেত্র / Areas of Expertise",
+ chambers: "চেম্বার ও সাক্ষাতের সময় / Chambers & Visiting Hours",
+ videoSection: "স্বাস্থ্য সচেতনতামূলক ভিডিও / Health Awareness Videos",
+};
+
+const ADMIN_SECTION_ORDER = [
+ "hero",
+ "stats",
+ "about",
+ "specializations",
+ "chambers",
+ "videoSection",
+ "contact",
+ "seo",
+ "branding",
+ "qualifications",
+];
+
+function sortAdminSections(rows: LandingSection[]) {
+ return [...rows].sort((a, b) => {
+  const aIndex = ADMIN_SECTION_ORDER.indexOf(a.key);
+  const bIndex = ADMIN_SECTION_ORDER.indexOf(b.key);
+  return (aIndex < 0 ? 999 : aIndex) - (bIndex < 0 ? 999 : bIndex);
+ });
+}
+
+function getSectionEditorValue(section: LandingSection, allSections: LandingSection[]) {
+ const content = { ...(section.draftContent || {}) } as Record<string, any>;
+
+ // Keep the old database record for qualifications, but edit it from the About section.
+ if (section.key === "about") {
+  const qualificationSection = allSections.find((item) => item.key === "qualifications");
+  const savedItems = qualificationSection?.draftContent?.items;
+  content.qualificationItems = Array.isArray(content.qualificationItems)
+      ? content.qualificationItems
+      : Array.isArray(savedItems)
+          ? savedItems
+          : [];
+ }
+
+ return JSON.stringify(content, null, 2);
+}
+
 type VideoSource = "YOUTUBE" | "FACEBOOK" | "EXTERNAL" | "UPLOAD";
 
 type VideoForm = {
@@ -114,7 +161,7 @@ export function AdminPage() {
     api<VideoItem[]>("/admin/videos", {}, session.accessToken),
    ]);
 
-   setSections(s);
+   setSections(sortAdminSections(s));
    setVideos(v);
 
    if (session.user.role === "SUPER_ADMIN") {
@@ -126,9 +173,12 @@ export function AdminPage() {
     setAdmins(u);
    }
 
-   if (!selected && s[0]) {
-    setSelected(s[0].id);
-    setEditor(JSON.stringify(s[0].draftContent, null, 2));
+   if (!selected) {
+    const orderedSections = sortAdminSections(s).filter((section) => section.key !== "qualifications");
+    if (orderedSections[0]) {
+     setSelected(orderedSections[0].id);
+     setEditor(getSectionEditorValue(orderedSections[0], s));
+    }
    }
   } catch (e) {
    setError(
@@ -143,7 +193,7 @@ export function AdminPage() {
 
  function choose(s: LandingSection) {
   setSelected(s.id);
-  setEditor(JSON.stringify(s.draftContent, null, 2));
+  setEditor(getSectionEditorValue(s, sections));
   setNotice("");
  }
 
@@ -155,15 +205,48 @@ export function AdminPage() {
 
   try {
    const content = JSON.parse(editor);
+   const selectedSection = sections.find((section) => section.id === selected);
 
-   await api(
-       `/admin/sections/${selected}/draft`,
-       {
-        method: "PUT",
-        body: JSON.stringify({ content }),
-       },
-       session.accessToken
-   );
+   if (selectedSection?.key === "about") {
+    const qualificationSection = sections.find((section) => section.key === "qualifications");
+    const { qualificationItems = [], ...aboutContent } = content;
+    if (!qualificationSection && Array.isArray(qualificationItems)) {
+     aboutContent.qualificationItems = qualificationItems;
+    }
+
+    await api(
+        `/admin/sections/${selected}/draft`,
+        {
+         method: "PUT",
+         body: JSON.stringify({ content: aboutContent }),
+        },
+        session.accessToken
+    );
+
+    if (qualificationSection) {
+     const qualificationContent = {
+      ...(qualificationSection.draftContent || {}),
+      items: Array.isArray(qualificationItems) ? qualificationItems : [],
+     };
+     await api(
+         `/admin/sections/${qualificationSection.id}/draft`,
+         {
+          method: "PUT",
+          body: JSON.stringify({ content: qualificationContent }),
+         },
+         session.accessToken
+     );
+    }
+   } else {
+    await api(
+        `/admin/sections/${selected}/draft`,
+        {
+         method: "PUT",
+         body: JSON.stringify({ content }),
+        },
+        session.accessToken
+    );
+   }
 
    setNotice("Draft saved. Public content is unchanged.");
    await load();
@@ -188,6 +271,18 @@ export function AdminPage() {
        session.accessToken
    );
 
+   const selectedSection = sections.find((section) => section.id === id);
+   if (selectedSection?.key === "about") {
+    const qualificationSection = sections.find((section) => section.key === "qualifications");
+    if (qualificationSection) {
+     await api(
+         `/admin/sections/${qualificationSection.id}/publish`,
+         { method: "POST" },
+         session.accessToken
+     );
+    }
+   }
+
    setNotice("Section published successfully.");
    await load();
   } catch (e) {
@@ -210,8 +305,6 @@ export function AdminPage() {
    }
 
    if (editingVideoId) {
-    // Update existing video metadata and optional thumbnail.
-    // FormData allows the backend to receive the uploaded image.
     const form = new FormData();
 
     const metadata = {
@@ -228,8 +321,6 @@ export function AdminPage() {
      form.append(key, String(value));
     });
 
-    // Only append a thumbnail when a new one was selected.
-    // If omitted, the backend should retain the existing thumbnail.
     if (thumbnail) {
      form.append("thumbnail", thumbnail);
     }
@@ -245,7 +336,6 @@ export function AdminPage() {
 
     setEditingVideoId(null);
    } else {
-    // Create a new video.
     const form = new FormData();
 
     Object.entries(video).forEach(([key, value]) => {
@@ -583,9 +673,9 @@ export function AdminPage() {
       ) : tab === "content" ? (
           <div className="mt-5 grid gap-5 lg:grid-cols-[260px_1fr]">
            <aside className="rounded-xl border border-line p-3">
-            <h2 className="p-2 font-bold">Landing page sections</h2>
+            <h2 className="p-2 font-bold">Landing page & footer content</h2>
 
-            {sections.map((s) => (
+            {sections.filter((section) => section.key !== "qualifications").map((s) => (
                 <button
                     key={s.id}
                     onClick={() => choose(s)}
@@ -595,10 +685,13 @@ export function AdminPage() {
                             : "hover:bg-mist"
                     }`}
                 >
-                 {s.title}
+                 {s.key === "contact"
+                     ? "Footer contact details"
+                     : ADMIN_SECTION_LABELS[s.key] || s.title}
                  <span className="block text-xs text-muted">
-                  {s.enabled ? "Enabled" : "Disabled"} ·{" "}
-                  {s.publishedContent ? "Published" : "Not published"}
+                  {s.key === "contact"
+                      ? "Footer settings · contact information"
+                      : `${s.enabled ? "Enabled" : "Disabled"} · ${s.publishedContent ? "Published" : "Not published"}`}
                 </span>
                 </button>
             ))}
@@ -606,7 +699,11 @@ export function AdminPage() {
 
            <div className="rounded-xl border border-line p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-             <h2 className="font-bold">Edit landing page content</h2>
+             <h2 className="font-bold">
+              {sections.find((section) => section.id === selected)?.key === "contact"
+                  ? "Edit footer contact details"
+                  : "Edit landing page content"}
+             </h2>
 
              <div className="flex flex-wrap gap-2">
               <button

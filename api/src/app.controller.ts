@@ -257,7 +257,23 @@ export class AppController {
 
     @Get('admin/sections')
     @UseGuards(AuthGuard)
-    sections() {
+    async sections() {
+        // Ensure the Statistics section exists.
+        // Existing content and settings will remain unchanged.
+        await this.db.landingSection.upsert({
+            where: {
+                key: 'stats',
+            },
+            update: {},
+            create: {
+                key: 'stats',
+                title: 'পরিসংখ্যান / Statistics',
+                enabled: true,
+                sortOrder: 1,
+                draftContent: {},
+            },
+        });
+
         return this.db.landingSection.findMany({
             orderBy: { sortOrder: 'asc' },
         });

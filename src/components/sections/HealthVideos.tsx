@@ -1,6 +1,6 @@
 
-import { useEffect, useState } from "react";
-import { Play, Video } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Play, Video, ArrowLeft, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SectionHeading } from "../ui/SectionHeading";
 import { api, type VideoItem, type LandingSection } from "../../lib/api";
@@ -10,16 +10,17 @@ const apiOrigin = (
 ).replace(/\/api\/?$/, "");
 
 const DESCRIPTION_LIMIT = 160;
+const MAX_PUBLIC_VIDEOS = 8;
+const CAROUSEL_GAP = 24;
+const AUTO_SLIDE_INTERVAL = 5000;
 
 type HealthVideosProps = {
     preview?: boolean;
 };
 
-// Supports full YouTube URLs and older records containing only the video ID.
 function getYouTubeId(value: string): string | null {
     const input = value.trim();
 
-    // Backward compatibility: a bare YouTube video ID.
     if (/^[a-zA-Z0-9_-]{11}$/.test(input)) {
         return input;
     }
@@ -51,7 +52,6 @@ function getYouTubeId(value: string): string | null {
     return null;
 }
 
-// Detects common direct video file URLs.
 function isDirectVideoUrl(value: string): boolean {
     try {
         const url = new URL(value);
@@ -72,15 +72,26 @@ function getVideoUrl(video: VideoItem): string {
     return video.mediaUrl;
 }
 
+function getThumbnailUrl(thumbnailUrl: string): string {
+    return thumbnailUrl.startsWith("/")
+        ? `${apiOrigin}${thumbnailUrl}`
+        : thumbnailUrl;
+}
+
 export function HealthVideos({ preview = false }: HealthVideosProps) {
     const { i18n } = useTranslation();
 
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [active, setActive] = useState<string | null>(null);
     const [copy, setCopy] = useState<any>({});
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
+
     const [expandedDescriptions, setExpandedDescriptions] = useState<
         Record<string, boolean>
     >({});
+
+    const carouselRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         let token: string | undefined;
@@ -109,7 +120,16 @@ export function HealthVideos({ preview = false }: HealthVideosProps) {
             : "/public/landing";
 
         api<VideoItem[]>(videosPath, {}, token)
-            .then(setVideos)
+            .then((rows) => {
+                setVideos(rows);
+                setCurrentIndex(0);
+                setActive(null);
+                setIsPaused(false);
+
+                if (carouselRef.current) {
+                    carouselRef.current.scrollLeft = 0;
+                }
+            })
             .catch(() => setVideos([]));
 
         api<LandingSection[]>(landingPath, {}, token)
@@ -129,6 +149,9 @@ export function HealthVideos({ preview = false }: HealthVideosProps) {
 
     const bn = i18n.language !== "en";
 
+    // Show a maximum of eight videos in the public carousel.
+    const visibleVideos = videos.slice(0, MAX_PUBLIC_VIDEOS);
+
     function toggleDescription(videoId: string) {
         setExpandedDescriptions((previous) => ({
             ...previous,
@@ -136,10 +159,90 @@ export function HealthVideos({ preview = false }: HealthVideosProps) {
         }));
     }
 
+    // Move exactly one video card per click.
+    function scrollToVideo(index: number) {
+        if (
+            index < 0 ||
+            index >= visibleVideos.length - 2 ||
+            !carouselRef.current
+        ) {
+            return;
+        }
+
+        const carousel = carouselRef.current;
+        const firstCard = carousel.firstElementChild as HTMLElement | null;
+
+        if (!firstCard) return;
+
+        const cardWidth = firstCard.getBoundingClientRect().width;
+        const scrollDistance = cardWidth + CAROUSEL_GAP;
+
+        setActive(null);
+        setCurrentIndex(index);
+
+        carousel.scrollTo({
+            left: index * scrollDistance,
+            behavior: "smooth",
+        });
+    }
+
+    function showPrevious() {
+        scrollToVideo(currentIndex - 1);
+    }
+
+    function showNext() {
+        scrollToVideo(currentIndex + 1);
+    }
+
+    // Automatically move one video every five seconds.
+    // Loop back to the beginning after reaching the last position.
+    useEffect(() => {
+        if (
+            visibleVideos.length <= 3 ||
+            active !== null ||
+            isPaused
+        ) {
+            return;
+        }
+
+        const maxStartIndex = visibleVideos.length - 3;
+
+        const timer = window.setInterval(() => {
+            const nextIndex =
+                currentIndex >= maxStartIndex
+                    ? 0
+                    : currentIndex + 1;
+
+            const carousel = carouselRef.current;
+            const firstCard = carousel?.firstElementChild as
+                | HTMLElement
+                | null;
+
+            if (!carousel || !firstCard) return;
+
+            const cardWidth = firstCard.getBoundingClientRect().width;
+            const scrollDistance = cardWidth + CAROUSEL_GAP;
+
+            setCurrentIndex(nextIndex);
+            setActive(null);
+
+            carousel.scrollTo({
+                left: nextIndex * scrollDistance,
+                behavior: "smooth",
+            });
+        }, AUTO_SLIDE_INTERVAL);
+
+        return () => window.clearInterval(timer);
+    }, [
+        currentIndex,
+        visibleVideos.length,
+        active,
+        isPaused,
+    ]);
+
     function renderPlayer(video: VideoItem) {
         const title = bn ? video.titleBn : video.titleEn;
 
-        // YouTube player
         if (video.source === "YOUTUBE") {
             const videoId = getYouTubeId(video.mediaUrl);
 
@@ -167,7 +270,6 @@ export function HealthVideos({ preview = false }: HealthVideosProps) {
             );
         }
 
-        // Facebook video player
         if (video.source === "FACEBOOK") {
             const embedUrl =
                 "https://www.facebook.com/plugins/video.php" +
@@ -180,14 +282,13 @@ export function HealthVideos({ preview = false }: HealthVideosProps) {
                     src={embedUrl}
                     className="h-full w-full"
                     style={{ border: 0, overflow: "hidden" }}
-                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
                     allowFullScreen
                     loading="lazy"
                 />
             );
         }
 
-        // Uploaded videos and direct external video files
         if (
             video.source === "UPLOAD" ||
             (video.source === "EXTERNAL" &&
@@ -224,7 +325,6 @@ export function HealthVideos({ preview = false }: HealthVideosProps) {
             );
         }
 
-        // Other external URLs are treated as embeddable web pages.
         return (
             <iframe
                 title={title}
@@ -256,10 +356,8 @@ export function HealthVideos({ preview = false }: HealthVideosProps) {
                     }
                     title={
                         bn
-                            ? copy.headingBn ||
-                            "স্বাস্থ্য সচেতনতা ও শিক্ষামূলক ভিডিও"
-                            : copy.headingEn ||
-                            "Health Awareness & Educational Videos"
+                            ? "স্বাস্থ্য সচেতনতামূলক ভিডিও"
+                            : "Health Awareness Videos"
                     }
                     description={
                         bn
@@ -271,137 +369,206 @@ export function HealthVideos({ preview = false }: HealthVideosProps) {
                     centered
                 />
 
-                {videos.length > 0 ? (
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                        {videos.map((video) => {
-                            const description = bn
-                                ? video.descriptionBn
-                                : video.descriptionEn;
+                {visibleVideos.length > 0 ? (
+                    <>
+                        <div
+                            ref={carouselRef}
+                            className="mt-8 flex gap-6 overflow-hidden"
+                            style={{
+                                scrollBehavior: "smooth",
+                                scrollSnapType: "x mandatory",
+                            }}
+                            onMouseEnter={() => setIsPaused(true)}
+                            onMouseLeave={() => setIsPaused(false)}
+                        >
+                            {visibleVideos.map((video) => {
+                                const description = bn
+                                    ? video.descriptionBn
+                                    : video.descriptionEn;
 
-                            const isLong =
-                                description.length > DESCRIPTION_LIMIT;
+                                const isLong =
+                                    description.length > DESCRIPTION_LIMIT;
 
-                            const isExpanded =
-                                expandedDescriptions[video.id] || false;
+                                const isExpanded =
+                                    expandedDescriptions[video.id] || false;
 
-                            const displayedDescription =
-                                isLong && !isExpanded
-                                    ? `${description
-                                        .slice(0, DESCRIPTION_LIMIT)
-                                        .trimEnd()}...`
-                                    : description;
+                                const displayedDescription =
+                                    isLong && !isExpanded
+                                        ? `${description
+                                            .slice(
+                                                0,
+                                                DESCRIPTION_LIMIT
+                                            )
+                                            .trimEnd()}...`
+                                        : description;
 
-                            return (
-                                <article
-                                    className="health-video-card"
-                                    key={video.id}
-                                >
-                                    <div className="health-video-frame">
-                                        {active === video.id ? (
-                                            renderPlayer(video)
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                className="health-video-play"
-                                                onClick={() =>
-                                                    setActive(video.id)
-                                                }
-                                                aria-label={`${
-                                                    bn
-                                                        ? "ভিডিও চালান"
-                                                        : "Play video"
-                                                }: ${
-                                                    bn
-                                                        ? video.titleBn
-                                                        : video.titleEn
-                                                }`}
-                                            >
-                                                {video.thumbnailUrl && (
-                                                    <img
-                                                        src={
-                                                            video.thumbnailUrl.startsWith(
-                                                                "/"
-                                                            )
-                                                                ? `${apiOrigin}${video.thumbnailUrl}`
-                                                                : video.thumbnailUrl
-                                                        }
-                                                        alt=""
-                                                        className="absolute inset-0 h-full w-full object-cover"
-                                                    />
-                                                )}
-
-                                                <span className="health-video-play-icon relative z-10">
-                                                    <Play
-                                                        size={24}
-                                                        fill="currentColor"
-                                                    />
-                                                </span>
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <div className="p-5">
-                                        <span className="health-video-category">
-                                            {bn
-                                                ? video.categoryBn
-                                                : video.categoryEn}
-                                        </span>
-
-                                        <h3 className="mt-2 text-lg font-extrabold">
-                                            {bn
-                                                ? video.titleBn
-                                                : video.titleEn}
-                                        </h3>
-
-                                        {description && (
-                                            <div className="mt-2">
-                                                <p className="text-sm leading-7 text-muted whitespace-pre-line">
-                                                    {displayedDescription}
-                                                </p>
-
-                                                {isLong && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            toggleDescription(
-                                                                video.id
-                                                            )
-                                                        }
-                                                        aria-expanded={isExpanded}
-                                                        className="mt-2 inline-flex items-center text-sm font-semibold text-teal-600 transition-colors hover:text-teal-700 hover:underline"
-                                                    >
-                                                        {bn
-                                                            ? isExpanded
-                                                                ? "কম দেখুন"
-                                                                : "আরও দেখুন"
-                                                            : isExpanded
-                                                                ? "View Less"
-                                                                : "View More"}
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {video.durationSeconds !== null &&
-                                            video.durationSeconds !==
-                                            undefined && (
-                                                <p className="mt-2 text-xs text-muted">
-                                                    {Math.floor(
-                                                        video.durationSeconds /
-                                                        60
+                                return (
+                                    <article
+                                        className="health-video-card min-w-0 flex-shrink-0"
+                                        key={video.id}
+                                        style={{
+                                            flexBasis:
+                                                "calc((100% - 48px) / 3)",
+                                            scrollSnapAlign: "start",
+                                        }}
+                                    >
+                                        <div className="health-video-frame">
+                                            {active === video.id ? (
+                                                renderPlayer(video)
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    className="health-video-play"
+                                                    onClick={() =>
+                                                        setActive(video.id)
+                                                    }
+                                                    aria-label={`${
+                                                        bn
+                                                            ? "ভিডিও চালান"
+                                                            : "Play video"
+                                                    }: ${
+                                                        bn
+                                                            ? video.titleBn
+                                                            : video.titleEn
+                                                    }`}
+                                                >
+                                                    {video.thumbnailUrl && (
+                                                        <img
+                                                            src={getThumbnailUrl(
+                                                                video.thumbnailUrl
+                                                            )}
+                                                            alt=""
+                                                            className="absolute inset-0 h-full w-full object-cover"
+                                                        />
                                                     )}
-                                                    :
-                                                    {String(
-                                                        video.durationSeconds %
-                                                        60
-                                                    ).padStart(2, "0")}
-                                                </p>
+
+                                                    <span className="health-video-play-icon relative z-10">
+                                                        <Play
+                                                            size={24}
+                                                            fill="currentColor"
+                                                        />
+                                                    </span>
+                                                </button>
                                             )}
-                                    </div>
-                                </article>
-                            );
-                        })}
-                    </div>
+                                        </div>
+
+                                        <div className="p-5">
+                                            <span className="health-video-category">
+                                                {bn
+                                                    ? video.categoryBn
+                                                    : video.categoryEn}
+                                            </span>
+
+                                            <h3 className="mt-2 text-lg font-extrabold">
+                                                {bn
+                                                    ? video.titleBn
+                                                    : video.titleEn}
+                                            </h3>
+
+                                            {description && (
+                                                <div className="mt-2">
+                                                    <p className="whitespace-pre-line text-sm leading-7 text-muted">
+                                                        {displayedDescription}
+                                                    </p>
+
+                                                    {isLong && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                toggleDescription(
+                                                                    video.id
+                                                                )
+                                                            }
+                                                            aria-expanded={
+                                                                isExpanded
+                                                            }
+                                                            className="mt-2 inline-flex items-center text-sm font-semibold text-teal-600 transition-colors hover:text-teal-700 hover:underline"
+                                                        >
+                                                            {bn
+                                                                ? isExpanded
+                                                                    ? "কম দেখুন"
+                                                                    : "আরও দেখুন"
+                                                                : isExpanded
+                                                                    ? "View Less"
+                                                                    : "View More"}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {video.durationSeconds !== null &&
+                                                video.durationSeconds !==
+                                                undefined && (
+                                                    <p className="mt-2 text-xs text-muted">
+                                                        {Math.floor(
+                                                            video.durationSeconds /
+                                                            60
+                                                        )}
+                                                        :
+                                                        {String(
+                                                            video.durationSeconds %
+                                                            60
+                                                        ).padStart(2, "0")}
+                                                    </p>
+                                                )}
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
+
+                        {visibleVideos.length > 3 && (
+                            <div
+                                className="mt-6 flex items-center justify-between gap-4"
+                                onMouseEnter={() => setIsPaused(true)}
+                                onMouseLeave={() => setIsPaused(false)}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={showPrevious}
+                                    disabled={currentIndex === 0}
+                                    className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2.5 text-sm font-bold transition-colors hover:border-teal hover:bg-mint disabled:cursor-not-allowed disabled:opacity-40"
+                                    aria-label={
+                                        bn ? "আগের ভিডিও" : "Previous video"
+                                    }
+                                >
+                                    <ArrowLeft size={17} />
+                                    {bn ? "আগের ভিডিও" : "Previous"}
+                                </button>
+
+                                <span
+                                    className="text-xs font-semibold text-muted"
+                                    aria-live="polite"
+                                >
+                                    {bn
+                                        ? `ভিডিও ${currentIndex + 1}–${Math.min(
+                                            currentIndex + 3,
+                                            visibleVideos.length
+                                        )} / ${visibleVideos.length}`
+                                        : `Videos ${currentIndex + 1}–${Math.min(
+                                            currentIndex + 3,
+                                            visibleVideos.length
+                                        )} of ${visibleVideos.length}`}
+                                </span>
+
+                                <button
+                                    type="button"
+                                    onClick={showNext}
+                                    disabled={
+                                        currentIndex >=
+                                        visibleVideos.length - 3
+                                    }
+                                    className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2.5 text-sm font-bold transition-colors hover:border-teal hover:bg-mint disabled:cursor-not-allowed disabled:opacity-40"
+                                    aria-label={
+                                        bn ? "পরের ভিডিও" : "Next video"
+                                    }
+                                >
+                                    {bn ? "পরের ভিডিও" : "Next"}
+                                    <ArrowRight size={17} />
+                                </button>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="health-videos-empty">
                         <span className="health-videos-empty-icon">
