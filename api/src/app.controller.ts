@@ -4,7 +4,6 @@ import {
     Get,
     Post,
     Put,
-    Delete,
     Body,
     Param,
     UseGuards,
@@ -22,9 +21,9 @@ import {
 } from '@nestjs/platform-express';
 
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
 import { randomUUID } from 'crypto';
-import { unlink } from 'fs/promises';
+import { mkdir, unlink } from 'fs/promises';
 import { spawn } from 'child_process';
 
 import * as bcrypt from 'bcryptjs';
@@ -34,10 +33,41 @@ import { PrismaService } from './prisma.service';
 import { Prisma } from '@prisma/client';
 import { AuthGuard, SuperAdminGuard } from './auth';
 
+// --------------------------------------------------
+// UPLOAD CONFIGURATION
+// --------------------------------------------------
+
 const uploadDir = process.env.UPLOAD_DIR || 'uploads';
+const uploadDirectory = join(process.cwd(), uploadDir);
+
+const MAX_UPLOAD_MB = Number(process.env.MAX_UPLOAD_MB || 200);
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
+
+const MAX_IMAGE_MB = Number(process.env.MAX_IMAGE_MB || 5);
+const MAX_IMAGE_BYTES = MAX_IMAGE_MB * 1024 * 1024;
+
+const MAX_VIDEO_DURATION_SECONDS = 300;
+
+if (!Number.isFinite(MAX_UPLOAD_MB) || MAX_UPLOAD_MB <= 0) {
+    throw new Error('MAX_UPLOAD_MB must be a positive number.');
+}
+
+if (!Number.isFinite(MAX_IMAGE_MB) || MAX_IMAGE_MB <= 0) {
+    throw new Error('MAX_IMAGE_MB must be a positive number.');
+}
+
+// Create the upload directory before accepting uploads.
+const uploadDirectoryReady = mkdir(uploadDirectory, {
+    recursive: true,
+});
 
 const storage = diskStorage({
-    destination: (_req, _file, cb) => cb(null, uploadDir),
+    destination: (_req, _file, cb) => {
+        uploadDirectoryReady
+            .then(() => cb(null, uploadDirectory))
+            .catch((error) => cb(error, uploadDirectory));
+    },
+
     filename: (_req, file, cb) =>
         cb(
             null,
@@ -45,9 +75,24 @@ const storage = diskStorage({
         ),
 });
 
+// --------------------------------------------------
+// VIDEO DURATION
+// --------------------------------------------------
+
 function durationOf(path: string): Promise<number> {
     return new Promise((resolve, reject) => {
-        const bin = require('ffprobe-static').path;
+        let bin: string;
+
+        try {
+            bin = require('ffprobe-static').path;
+
+            if (!bin) {
+                throw new Error('FFprobe binary path not found.');
+            }
+        } catch (error) {
+            reject(error);
+            return;
+        }
 
         const p = spawn(bin, [
             '-v',
@@ -60,9 +105,14 @@ function durationOf(path: string): Promise<number> {
         ]);
 
         let out = '';
+        let err = '';
 
         p.stdout.on('data', (data) => {
             out += data;
+        });
+
+        p.stderr.on('data', (data) => {
+            err += data;
         });
 
         p.on('error', reject);
@@ -70,14 +120,26 @@ function durationOf(path: string): Promise<number> {
         p.on('close', (code) => {
             const duration = Number(out.trim());
 
-            if (code !== 0 || !Number.isFinite(duration) || duration <= 0) {
-                reject(new Error('Could not read video duration.'));
+            if (
+                code !== 0 ||
+                !Number.isFinite(duration) ||
+                duration <= 0
+            ) {
+                reject(
+                    new Error(
+                        err || 'Could not read video duration.',
+                    ),
+                );
             } else {
                 resolve(duration);
             }
         });
     });
 }
+
+// --------------------------------------------------
+// VIDEO URL VALIDATION
+// --------------------------------------------------
 
 function parseVideoUrl(input: string): URL {
     try {
@@ -93,7 +155,9 @@ function parseVideoUrl(input: string): URL {
 
         return url;
     } catch {
-        throw new BadRequestException('A valid video URL is required.');
+        throw new BadRequestException(
+            'A valid video URL is required.',
+        );
     }
 }
 
@@ -112,6 +176,10 @@ function isFacebookUrl(url: URL): boolean {
         url.hostname === 'fb.watch'
     );
 }
+
+// --------------------------------------------------
+// CONTROLLER
+// --------------------------------------------------
 
 @Controller('api')
 export class AppController {
@@ -136,8 +204,7 @@ export class AppController {
         FileInterceptor('image', {
             storage,
             limits: {
-                fileSize:
-                    Number(process.env.MAX_IMAGE_MB || 5) * 1024 * 1024,
+                fileSize: MAX_IMAGE_BYTES,
             },
             fileFilter: (_req, file, callback) => {
                 const allowedTypes = [
@@ -162,7 +229,9 @@ export class AppController {
     )
     async uploadImage(@UploadedFile() file: Express.Multer.File) {
         if (!file) {
-            throw new BadRequestException('Please select an image.');
+            throw new BadRequestException(
+                'Please select an image.',
+            );
         }
 
         return {
@@ -193,7 +262,9 @@ export class AppController {
                 user.passwordHash,
             ))
         ) {
-            throw new UnauthorizedException('Invalid email or password');
+            throw new UnauthorizedException(
+                'Invalid email or password',
+            );
         }
 
         const token = jwt.sign(
@@ -232,7 +303,9 @@ export class AppController {
             },
         });
 
-        return rows.filter((row) => row.publishedContent !== null);
+        return rows.filter(
+            (row) => row.publishedContent !== null,
+        );
     }
 
     // --------------------------------------------------
@@ -258,8 +331,6 @@ export class AppController {
     @Get('admin/sections')
     @UseGuards(AuthGuard)
     async sections() {
-        // Ensure the Statistics section exists.
-        // Existing content and settings will remain unchanged.
         await this.db.landingSection.upsert({
             where: {
                 key: 'stats',
@@ -285,7 +356,10 @@ export class AppController {
         @Param('id') id: string,
         @Body() body: any,
     ) {
-        if (!body.content || typeof body.content !== 'object') {
+        if (
+            !body.content ||
+            typeof body.content !== 'object'
+        ) {
             throw new BadRequestException(
                 'Content must be a JSON object',
             );
@@ -307,7 +381,9 @@ export class AppController {
         });
 
         if (!section) {
-            throw new NotFoundException('Landing section not found');
+            throw new NotFoundException(
+                'Landing section not found',
+            );
         }
 
         if (section.draftContent === null) {
@@ -390,8 +466,7 @@ export class AppController {
 
     // --------------------------------------------------
     // CREATE VIDEO
-    // Supports:
-    // UPLOAD, YOUTUBE, FACEBOOK, EXTERNAL
+    // Supports UPLOAD, YOUTUBE, FACEBOOK, EXTERNAL
     // --------------------------------------------------
 
     @Post('admin/videos')
@@ -405,45 +480,45 @@ export class AppController {
             ],
             {
                 storage,
-                limits: process.env.MAX_UPLOAD_MB
-                    ? {
-                        fileSize:
-                            Number(process.env.MAX_UPLOAD_MB) * 1024 * 1024,
-                    }
-                    : {},
+                limits: {
+                    fileSize: MAX_UPLOAD_BYTES,
+                },
                 fileFilter: (_req, file, cb) => {
-                    if (
-                        file.fieldname === 'video' &&
-                        !process.env.MAX_UPLOAD_MB
-                    ) {
-                        return cb(
-                            new Error('Video uploads are not configured.'),
-                            false,
-                        );
-                    }
-
                     if (
                         file.fieldname === 'video' &&
                         !file.mimetype.startsWith('video/')
                     ) {
-                        return cb(new Error('Video file required.'), false);
+                        return cb(
+                            new BadRequestException(
+                                'Video file required.',
+                            ),
+                            false,
+                        );
                     }
 
                     if (
                         file.fieldname === 'thumbnail' &&
                         !file.mimetype.startsWith('image/')
                     ) {
-                        return cb(new Error('Image thumbnail required.'), false);
+                        return cb(
+                            new BadRequestException(
+                                'Image thumbnail required.',
+                            ),
+                            false,
+                        );
                     }
 
                     if (
                         file.fieldname === 'captions' &&
-                        !['text/vtt', 'application/octet-stream'].includes(
-                            file.mimetype,
-                        )
+                        ![
+                            'text/vtt',
+                            'application/octet-stream',
+                        ].includes(file.mimetype)
                     ) {
                         return cb(
-                            new Error('WebVTT captions file required.'),
+                            new BadRequestException(
+                                'WebVTT captions file required.',
+                            ),
                             false,
                         );
                     }
@@ -473,7 +548,9 @@ export class AppController {
         const source = String(body.source || '');
 
         if (!allowedSources.includes(source)) {
-            throw new BadRequestException('Invalid video source.');
+            throw new BadRequestException(
+                'Invalid video source.',
+            );
         }
 
         let mediaUrl = '';
@@ -482,26 +559,20 @@ export class AppController {
         const videoFile = files?.video?.[0];
 
         if (source === 'UPLOAD') {
-            if (
-                !process.env.MAX_UPLOAD_MB ||
-                !Number.isFinite(Number(process.env.MAX_UPLOAD_MB)) ||
-                Number(process.env.MAX_UPLOAD_MB) <= 0
-            ) {
+            if (!videoFile) {
                 throw new BadRequestException(
-                    'Video uploads are not configured.',
+                    'Video file is required.',
                 );
             }
 
-            if (!videoFile) {
-                throw new BadRequestException('Video file is required.');
-            }
-
             try {
-                const duration = await durationOf(videoFile.path);
+                const duration = await durationOf(
+                    videoFile.path,
+                );
 
-                if (duration > 180) {
+                if (duration > MAX_VIDEO_DURATION_SECONDS) {
                     throw new BadRequestException(
-                        'Uploaded videos must not exceed 180 seconds.',
+                        'Uploaded videos must not exceed 5 minutes (300 seconds).',
                     );
                 }
 
@@ -514,8 +585,13 @@ export class AppController {
                     throw error;
                 }
 
+                console.error(
+                    'Video duration validation failed:',
+                    error,
+                );
+
                 throw new BadRequestException(
-                    'Could not validate the uploaded video duration.',
+                    'Could not validate the uploaded video duration. Please check that the video is valid and FFprobe is working.',
                 );
             }
         } else {
@@ -526,74 +602,95 @@ export class AppController {
                         ? body.facebookUrl
                         : body.externalUrl;
 
-            const url = parseVideoUrl(String(inputUrl || ''));
+            const url = parseVideoUrl(
+                String(inputUrl || ''),
+            );
 
-            if (source === 'YOUTUBE' && !isYouTubeUrl(url)) {
+            if (
+                source === 'YOUTUBE' &&
+                !isYouTubeUrl(url)
+            ) {
                 throw new BadRequestException(
                     'Please provide a valid YouTube URL.',
                 );
             }
 
-            if (source === 'FACEBOOK' && !isFacebookUrl(url)) {
+            if (
+                source === 'FACEBOOK' &&
+                !isFacebookUrl(url)
+            ) {
                 throw new BadRequestException(
                     'Please provide a valid Facebook video URL.',
                 );
             }
 
             mediaUrl = url.toString();
-
-            // External videos have no locally enforced duration limit.
             durationSeconds = null;
         }
 
         const thumbnail = files?.thumbnail?.[0];
         const captions = files?.captions?.[0];
 
-        return this.db.video.create({
-            data: {
-                source: source as
-                    | 'UPLOAD'
-                    | 'YOUTUBE'
-                    | 'FACEBOOK'
-                    | 'EXTERNAL',
+        try {
+            return await this.db.video.create({
+                data: {
+                    source: source as
+                        | 'UPLOAD'
+                        | 'YOUTUBE'
+                        | 'FACEBOOK'
+                        | 'EXTERNAL',
 
-                titleBn: String(body.titleBn),
-                titleEn: String(body.titleEn),
+                    titleBn: String(body.titleBn),
+                    titleEn: String(body.titleEn),
 
-                descriptionBn: String(body.descriptionBn || ''),
-                descriptionEn: String(body.descriptionEn || ''),
+                    descriptionBn: String(
+                        body.descriptionBn || '',
+                    ),
+                    descriptionEn: String(
+                        body.descriptionEn || '',
+                    ),
 
-                categoryBn: String(
-                    body.categoryBn || 'স্বাস্থ্য সচেতনতা',
-                ),
-                categoryEn: String(
-                    body.categoryEn || 'Health Awareness',
-                ),
+                    categoryBn: String(
+                        body.categoryBn || 'স্বাস্থ্য সচেতনতা',
+                    ),
+                    categoryEn: String(
+                        body.categoryEn || 'Health Awareness',
+                    ),
 
-                mediaUrl,
+                    mediaUrl,
 
-                thumbnailUrl: thumbnail
-                    ? `/uploads/${thumbnail.filename}`
-                    : null,
+                    thumbnailUrl: thumbnail
+                        ? `/uploads/${thumbnail.filename}`
+                        : null,
 
-                captionsUrl: captions
-                    ? `/uploads/${captions.filename}`
-                    : null,
+                    captionsUrl: captions
+                        ? `/uploads/${captions.filename}`
+                        : null,
 
-                durationSeconds,
+                    durationSeconds,
 
-                featured: String(body.featured) === 'true',
+                    featured: String(body.featured) === 'true',
 
-                status: 'DRAFT',
-            },
-        });
+                    status: 'DRAFT',
+                },
+            });
+        } catch (error) {
+            for (const file of [
+                videoFile,
+                thumbnail,
+                captions,
+            ]) {
+                if (file?.path) {
+                    await unlink(file.path).catch(() => {});
+                }
+            }
+
+            throw error;
+        }
     }
 
     // --------------------------------------------------
     // UPDATE VIDEO
-    // Supports multipart/form-data and optional thumbnail.
-    // Existing thumbnail remains unchanged when no new
-    // thumbnail is uploaded.
     // --------------------------------------------------
 
     @Put('admin/videos/:id')
@@ -604,8 +701,7 @@ export class AppController {
             {
                 storage,
                 limits: {
-                    fileSize:
-                        Number(process.env.MAX_IMAGE_MB || 5) * 1024 * 1024,
+                    fileSize: MAX_IMAGE_BYTES,
                 },
                 fileFilter: (_req, file, cb) => {
                     const allowedTypes = [
@@ -639,7 +735,9 @@ export class AppController {
         });
 
         if (!existing) {
-            throw new NotFoundException('Video not found.');
+            throw new NotFoundException(
+                'Video not found.',
+            );
         }
 
         const thumbnail = files?.thumbnail?.[0];
@@ -654,15 +752,21 @@ export class AppController {
                 await unlink(thumbnail.path).catch(() => {});
             }
 
-            throw new BadRequestException('Invalid video sort order.');
+            throw new BadRequestException(
+                'Invalid video sort order.',
+            );
         }
 
         try {
             return await this.db.video.update({
                 where: { id },
                 data: {
-                    titleBn: String(body.titleBn ?? existing.titleBn),
-                    titleEn: String(body.titleEn ?? existing.titleEn),
+                    titleBn: String(
+                        body.titleBn ?? existing.titleBn,
+                    ),
+                    titleEn: String(
+                        body.titleEn ?? existing.titleEn,
+                    ),
 
                     descriptionBn: String(
                         body.descriptionBn ?? existing.descriptionBn,
@@ -773,7 +877,10 @@ export class AppController {
             );
         }
 
-        const passwordHash = await bcrypt.hash(body.password, 12);
+        const passwordHash = await bcrypt.hash(
+            body.password,
+            12,
+        );
 
         return this.db.adminUser.create({
             data: {

@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Menu, X, Phone } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import i18n from "../../i18n";
 import { api, type LandingSection } from "../../lib/api";
 
@@ -12,6 +12,9 @@ export function Header() {
     const [brand, setBrand] = useState<HeaderContent>({});
     const [contact, setContact] = useState<HeaderContent>({});
     const [isScrolled, setIsScrolled] = useState(false);
+
+    const location = useLocation();
+    const isAdminPage = location.pathname.startsWith("/admin");
 
     useEffect(() => {
         api<LandingSection[]>("/public/landing")
@@ -77,7 +80,9 @@ export function Header() {
             </div>
 
             <header
-                className={`site-header ${isScrolled ? "is-scrolled" : ""}`}
+                className={`site-header ${isScrolled ? "is-scrolled" : ""} ${
+                    isAdminPage ? "admin-header" : ""
+                }`}
             >
                 <div className="container-shell flex min-h-[82px] items-center justify-between gap-4">
                     <Link to="/" className="flex min-w-0 items-center gap-3">
@@ -100,20 +105,22 @@ export function Header() {
                         </span>
                     </Link>
 
-                    <nav
-                        aria-label="Main navigation"
-                        className="hidden items-center gap-5 xl:flex"
-                    >
-                        {links.map((link) => (
-                            <a
-                                key={link.id}
-                                className="nav-link"
-                                href={`/#${link.id}`}
-                            >
-                                {lang === "bn" ? link.bn : link.en}
-                            </a>
-                        ))}
-                    </nav>
+                    {!isAdminPage && (
+                        <nav
+                            aria-label="Main navigation"
+                            className="hidden items-center gap-5 xl:flex"
+                        >
+                            {links.map((link) => (
+                                <a
+                                    key={link.id}
+                                    className="nav-link"
+                                    href={`/#${link.id}`}
+                                >
+                                    {lang === "bn" ? link.bn : link.en}
+                                </a>
+                            ))}
+                        </nav>
+                    )}
 
                     <div className="flex items-center gap-2">
                         <button
@@ -128,14 +135,16 @@ export function Header() {
                             {lang === "en" ? "বাংলা" : "English"}
                         </button>
 
-                        <button
-                            onClick={() => setOpen(!open)}
-                            className="header-action-button rounded-lg border p-2 xl:hidden"
-                            aria-expanded={open}
-                            aria-label="Toggle navigation"
-                        >
-                            {open ? <X /> : <Menu />}
-                        </button>
+                        {!isAdminPage && open && (
+                            <button
+                                onClick={() => setOpen(!open)}
+                                className="header-action-button rounded-lg border p-2 xl:hidden"
+                                aria-expanded={open}
+                                aria-label="Toggle navigation"
+                            >
+                                {open ? <X /> : <Menu />}
+                            </button>
+                        )}
                     </div>
                 </div>
 

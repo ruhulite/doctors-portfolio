@@ -37,6 +37,10 @@ body {
 button, input, select, textarea { font: inherit; }
 a { text-decoration: none; }
 
+button {
+    cursor: pointer;
+}
+
 .container-shell {
     width: min(1320px, calc(100% - 64px));
     margin-inline: auto;
@@ -74,6 +78,11 @@ a { text-decoration: none; }
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     transition: background 0.3s ease, backdrop-filter 0.3s ease;
+}
+
+/* Admin header bottom border */
+.site-header.admin-header {
+    border-bottom: 1px solid rgba(16, 53, 78, 0.3);
 }
 
 .site-header .brand-title,
@@ -929,7 +938,7 @@ a { text-decoration: none; }
 .about-profile-layout {
     display: grid;
     grid-template-columns: minmax(260px, .78fr) minmax(0, 1.22fr);
-    align-items: center;
+    align-items: flex-start;
     gap: clamp(32px, 5vw, 76px);
 }
 
@@ -1243,9 +1252,7 @@ a { text-decoration: none; }
     align-items: flex-start;
     gap: 10px;
     margin-top: auto;
-    padding: 16px 14px;
-    border-top: 1px solid #e5eef1;
-    background: #f6fafb;
+    padding: 16px 0px;
     color: #526f7e;
     font-size: 13px;
     font-weight: 700;
@@ -1849,3 +1856,264 @@ select:focus-visible {
 }
 
 
+
+/* =========================================
+   FOOTER — TWO PART LAYOUT
+========================================= */
+
+.site-footer {
+    padding: 55px 0 0;
+    text-align: left;
+}
+
+.footer-top {
+    position: relative;
+    z-index: 1;
+}
+
+.footer-main {
+    grid-template-columns: 1.2fr 1fr;
+    align-items: start;
+    gap: 70px;
+    padding-bottom: 42px;
+    text-align: left;
+}
+
+.footer-brand,
+.footer-chambers {
+    min-width: 0;
+    text-align: left;
+}
+
+.footer-logo {
+    display: block;
+    width: auto;
+    max-width: 150px;
+    max-height: 85px;
+    margin: 0 0 20px;
+    object-fit: contain;
+    object-position: left center;
+}
+
+.footer-doctor-name {
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.footer-doctor-subtitle {
+    margin: 8px 0 24px;
+    text-align: left;
+}
+
+.footer-subheading {
+    margin: 0 0 13px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    text-align: left;
+}
+
+.footer-expertise ul {
+    display: grid;
+    gap: 9px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.footer-expertise li,
+.footer-expertise p {
+    position: relative;
+    margin: 0;
+    padding-left: 17px;
+    color: rgba(255, 255, 255, .78);
+    font-size: 14px;
+    line-height: 1.8;
+    text-align: left;
+}
+
+.footer-expertise li::before {
+    content: "";
+    position: absolute;
+    top: 10px;
+    left: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1dd2c8;
+}
+
+.footer-heading {
+    margin-bottom: 24px;
+    text-align: left;
+}
+
+.footer-heading::after {
+    margin-left: 0;
+}
+
+.footer-contact-list {
+    align-items: stretch;
+    text-align: left;
+}
+
+.footer-chamber-item {
+    display: grid;
+    gap: 12px;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.footer-chamber-item:last-child {
+    margin-bottom: 0;
+}
+
+.footer-chamber-item h4 {
+    margin: 0;
+    color: #1dd2c8;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.7;
+    text-align: left;
+}
+
+.footer-contact-item {
+    align-items: flex-start;
+    text-align: left;
+}
+
+.footer-contact-icon {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+}
+
+.footer-contact-item span:last-child {
+    padding-top: 5px;
+    text-align: left;
+    white-space: pre-line;
+}
+
+.footer-divider {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 1px;
+    background: rgba(255, 255, 255, .18);
+}
+
+.footer-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+    gap: 24px;
+    padding: 20px 0;
+    border-top: 0;
+    text-align: left;
+}
+
+.footer-bottom-info,
+.footer-bottom-copyright {
+    min-width: 0;
+    text-align: left;
+}
+
+.footer-bottom p {
+    margin: 0;
+    color: rgba(255, 255, 255, .65);
+    font-size: 12px;
+    line-height: 1.8;
+    text-align: left;
+}
+
+/* Tablet and mobile */
+@media (max-width: 768px) {
+    .site-footer {
+        padding-top: 42px;
+    }
+
+    .footer-main {
+        grid-template-columns: 1fr;
+        gap: 36px;
+        padding-bottom: 32px;
+    }
+
+    .footer-bottom {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 18px 0;
+    }
+
+    .footer-logo {
+        max-width: 125px;
+        max-height: 70px;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-footer {
+        padding-top: 35px;
+    }
+
+    .footer-main {
+        gap: 30px;
+    }
+
+    .footer-doctor-name {
+        font-size: 20px;
+    }
+
+    .footer-contact-item {
+        font-size: 13px;
+    }
+}
+
+
+/* Two chambers side by side */
+.footer-chamber-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    width: 100%;
+}
+
+.footer-chamber-item {
+    min-width: 0;
+    padding: 16px;
+}
+
+.footer-chamber-item h4 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.footer-chamber-item .footer-contact-item {
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.footer-chamber-item .footer-contact-item:last-child {
+    margin-bottom: 0;
+}
+
+.footer-chamber-item .footer-contact-item span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.footer-general-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    margin-top: 20px;
+}
+
+/* Tablet and mobile */
+@media (max-width: 640px) {
+    .footer-chamber-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}

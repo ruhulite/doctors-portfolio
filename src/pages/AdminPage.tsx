@@ -787,7 +787,7 @@ export function AdminPage() {
 
             {video.source === "UPLOAD" ? (
                 <label className="mt-3 grid gap-1 text-sm font-semibold">
-                 Video file (maximum duration 180 seconds)
+                 Video file (maximum duration 5 minutes)
 
                  <input
                      type="file"
@@ -799,7 +799,7 @@ export function AdminPage() {
                  />
 
                  <span className="text-xs text-muted">
-                  Direct uploads must not exceed 180 seconds.
+                  Direct uploads must not exceed 5 minutes (300 seconds).
                 </span>
                 </label>
             ) : video.source === "YOUTUBE" ? (
@@ -852,8 +852,7 @@ export function AdminPage() {
                  />
 
                  <span className="text-xs text-muted">
-                  No 180-second limit. Playback depends on the provider
-                  supporting video playback or embedding.
+                  No locally enforced duration limit. Playback depends on the provider supporting video playback or embedding.
                 </span>
                 </label>
             )}

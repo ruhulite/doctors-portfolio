@@ -4,13 +4,14 @@ import { useTranslation } from "react-i18next";
 import {
     ArrowLeft,
     ArrowRight,
-    Building2,
     CalendarDays,
     Clock,
     GraduationCap,
     MapPin,
+    Phone,
     Stethoscope,
 } from "lucide-react";
+
 import { api, API_BASE, type LandingSection } from "../lib/api";
 import { HealthVideos } from "../components/sections/HealthVideos";
 
@@ -32,10 +33,23 @@ type HeroSlide = {
 type ContentItem = {
     titleBn?: string;
     titleEn?: string;
+
     descriptionBn?: string;
     descriptionEn?: string;
+
     metaBn?: string;
     metaEn?: string;
+
+    addressBn?: string;
+    addressEn?: string;
+
+    visitingDaysBn?: string;
+    visitingDaysEn?: string;
+
+    visitingHoursBn?: string;
+    visitingHoursEn?: string;
+
+    appointmentNumber?: string;
 };
 
 type Content = {
@@ -57,8 +71,11 @@ type Content = {
     ctaTextEn?: string;
 };
 
-const langText = (bn?: string, en?: string, lang?: string) =>
-    lang === "en" ? en || bn || "" : bn || en || "";
+const langText = (
+    bn?: string,
+    en?: string,
+    lang?: string
+) => (lang === "en" ? en || bn || "" : bn || en || "");
 
 const resolveImageUrl = (url?: string) => {
     if (!url) return "";
@@ -66,13 +83,23 @@ const resolveImageUrl = (url?: string) => {
     if (/^https?:\/\//i.test(url)) return url;
 
     const backendOrigin = API_BASE.replace(/\/api\/?$/, "");
+
     return `${backendOrigin}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
 const sectionNames: Record<string, { bn: string; en: string }> = {
-    hero: { bn: "স্বাগতম", en: "Welcome" },
-    stats: { bn: "পরিসংখ্যান", en: "Statistics" },
-    about: { bn: "চিকিৎসক পরিচিতি", en: "About the Doctor" },
+    hero: {
+        bn: "স্বাগতম",
+        en: "Welcome",
+    },
+    stats: {
+        bn: "পরিসংখ্যান",
+        en: "Statistics",
+    },
+    about: {
+        bn: "চিকিৎসক পরিচিতি",
+        en: "About the Doctor",
+    },
     specializations: {
         bn: "বিশেষজ্ঞতার ক্ষেত্র",
         en: "Areas of Expertise",
@@ -107,6 +134,10 @@ function getHeroSlides(content: Content): HeroSlide[] {
         : [];
 }
 
+/* -------------------------------------------------------
+   HERO SLIDER
+------------------------------------------------------- */
+
 function HeroSlider({
                         content,
                         lang,
@@ -137,10 +168,30 @@ function HeroSlider({
     if (slides.length === 0) return null;
 
     const slide = slides[activeIndex] || slides[0];
-    const heading = langText(slide.headingBn, slide.headingEn, lang);
-    const subtitle = langText(slide.subtitleBn, slide.subtitleEn, lang);
-    const body = langText(slide.bodyBn, slide.bodyEn, lang);
-    const ctaText = langText(slide.ctaTextBn, slide.ctaTextEn, lang);
+
+    const heading = langText(
+        slide.headingBn,
+        slide.headingEn,
+        lang
+    );
+
+    const subtitle = langText(
+        slide.subtitleBn,
+        slide.subtitleEn,
+        lang
+    );
+
+    const body = langText(
+        slide.bodyBn,
+        slide.bodyEn,
+        lang
+    );
+
+    const ctaText = langText(
+        slide.ctaTextBn,
+        slide.ctaTextEn,
+        lang
+    );
 
     const showPrevious = () =>
         setActiveIndex(
@@ -154,7 +205,10 @@ function HeroSlider({
         );
 
     return (
-        <section id="hero" className="hero-medical hero-overlay-slider">
+        <section
+            id="hero"
+            className="hero-medical hero-overlay-slider"
+        >
             <div className="hero-slide-frame">
                 <div className="hero-overlay-shade" />
 
@@ -173,15 +227,21 @@ function HeroSlider({
                         className="hero-copy-fade"
                     >
                         {subtitle && (
-                            <p className="hero-kicker">{subtitle}</p>
+                            <p className="hero-kicker">
+                                {subtitle}
+                            </p>
                         )}
 
                         {heading && (
-                            <h1 className="hero-title">{heading}</h1>
+                            <h1 className="hero-title">
+                                {heading}
+                            </h1>
                         )}
 
                         {body && (
-                            <p className="hero-description">{body}</p>
+                            <p className="hero-description">
+                                {body}
+                            </p>
                         )}
 
                         {ctaText && (
@@ -199,14 +259,18 @@ function HeroSlider({
                     <div
                         className="hero-slider-controls"
                         aria-label={
-                            bn ? "হিরো স্লাইড নিয়ন্ত্রণ" : "Hero slide controls"
+                            bn
+                                ? "হিরো স্লাইড নিয়ন্ত্রণ"
+                                : "Hero slide controls"
                         }
                     >
                         <button
                             type="button"
                             className="hero-slider-arrow"
                             onClick={showPrevious}
-                            aria-label={bn ? "আগের স্লাইড" : "Previous slide"}
+                            aria-label={
+                                bn ? "আগের স্লাইড" : "Previous slide"
+                            }
                         >
                             <ArrowLeft size={19} />
                         </button>
@@ -217,12 +281,20 @@ function HeroSlider({
                                     key={item.id || index}
                                     type="button"
                                     className={`hero-slider-dot ${
-                                        index === activeIndex ? "is-active" : ""
+                                        index === activeIndex
+                                            ? "is-active"
+                                            : ""
                                     }`}
-                                    onClick={() => setActiveIndex(index)}
-                                    aria-label={`${bn ? "স্লাইড" : "Slide"} ${index + 1}`}
+                                    onClick={() =>
+                                        setActiveIndex(index)
+                                    }
+                                    aria-label={`${
+                                        bn ? "স্লাইড" : "Slide"
+                                    } ${index + 1}`}
                                     aria-current={
-                                        index === activeIndex ? "true" : undefined
+                                        index === activeIndex
+                                            ? "true"
+                                            : undefined
                                     }
                                 />
                             ))}
@@ -232,7 +304,9 @@ function HeroSlider({
                             type="button"
                             className="hero-slider-arrow"
                             onClick={showNext}
-                            aria-label={bn ? "পরের স্লাইড" : "Next slide"}
+                            aria-label={
+                                bn ? "পরের স্লাইড" : "Next slide"
+                            }
                         >
                             <ArrowRight size={19} />
                         </button>
@@ -242,6 +316,10 @@ function HeroSlider({
         </section>
     );
 }
+
+/* -------------------------------------------------------
+   STATISTICS
+------------------------------------------------------- */
 
 function StatsBand({
                        content,
@@ -296,7 +374,11 @@ function StatsBand({
                 backgroundPosition: "center",
                 backgroundSize: "cover",
             }}
-            aria-label={bn ? "চিকিৎসকের পরিসংখ্যান" : "Doctor statistics"}
+            aria-label={
+                bn
+                    ? "চিকিৎসকের পরিসংখ্যান"
+                    : "Doctor statistics"
+            }
         >
             <div className="container-shell stats-band-inner">
                 {items.map((item, index) => (
@@ -329,6 +411,10 @@ function StatsBand({
     );
 }
 
+/* -------------------------------------------------------
+   CHAMBER CARD
+------------------------------------------------------- */
+
 function ChamberCard({
                          item,
                          index,
@@ -340,52 +426,169 @@ function ChamberCard({
 }) {
     const bn = lang !== "en";
 
-    const title = langText(item.titleBn, item.titleEn, lang);
-    const description = langText(
-        item.descriptionBn,
-        item.descriptionEn,
+    const title = langText(
+        item.titleBn,
+        item.titleEn,
         lang
     );
-    const meta = langText(item.metaBn, item.metaEn, lang);
+
+    // New CMS fields with backward compatibility.
+    const address = langText(
+        item.addressBn || item.descriptionBn,
+        item.addressEn || item.descriptionEn,
+        lang
+    );
+
+    const visitingDays = langText(
+        item.visitingDaysBn,
+        item.visitingDaysEn,
+        lang
+    );
+
+    const visitingHours = langText(
+        item.visitingHoursBn || item.metaBn,
+        item.visitingHoursEn || item.metaEn,
+        lang
+    );
+
+    const appointmentNumber =
+        item.appointmentNumber?.trim() || "";
+
+    const telephoneLink = appointmentNumber.replace(
+        /[^\d+]/g,
+        ""
+    );
 
     return (
-        <article className="chamber-panel chamber-card">
-            <div className="chamber-card-header">
-                <span className="chamber-card-icon">
-                    <Building2 size={23} />
-                </span>
+        <article className="chamber-panel">
+            {/* Chamber heading */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <span className="text-[10px] font-extrabold uppercase tracking-[.15em] text-teal">
+                        {bn
+                            ? `চেম্বার ${index + 1}`
+                            : `Chamber ${index + 1}`}
+                    </span>
 
-                <span className="chamber-card-label">
-                    {bn ? `চেম্বার ${index + 1}` : `Chamber ${index + 1}`}
+                    <h3 className="mt-2 text-2xl font-extrabold">
+                        {title}
+                    </h3>
+                </div>
+
+                <span className="grid size-12 shrink-0 place-items-center rounded-full bg-mint text-teal">
+                    <MapPin size={22} />
                 </span>
             </div>
 
-            <h3 className="chamber-card-title">{title}</h3>
+            {/* Address */}
+            {address && (
+                <div className="mt-5 flex gap-3 text-sm text-muted">
+                    <MapPin
+                        size={18}
+                        className="mt-0.5 shrink-0 text-teal"
+                    />
 
-            {description && (
-                <div className="chamber-card-details">
-                    <span className="chamber-card-detail-icon">
-                        <MapPin size={18} />
-                    </span>
-                    <p>{description}</p>
+                    <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-ink">
+                            {bn ? "ঠিকানা" : "Address"}
+                        </p>
+
+                        <p className="mt-1 leading-6">
+                            {address}
+                        </p>
+                    </div>
                 </div>
             )}
 
-            <div className="chamber-card-footer">
-                <span className="chamber-card-footer-icon">
-                    {meta ? <Clock size={17} /> : <CalendarDays size={17} />}
-                </span>
+            {/* Appointment phone */}
+            {appointmentNumber && (
+                <div className="mt-5 flex gap-3 text-sm text-muted">
+                    <Phone
+                        size={18}
+                        className="mt-0.5 shrink-0 text-teal"
+                    />
 
-                <p>
-                    {meta ||
-                        (bn
-                            ? "সাক্ষাতের সময় জানতে যোগাযোগ করুন"
-                            : "Contact the chamber for visiting hours")}
-                </p>
-            </div>
+                    <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-ink">
+                            {bn
+                                ? "অ্যাপয়েন্টমেন্ট ফোন"
+                                : "Appointment Phone"}
+                        </p>
+
+                        <a
+                            href={`tel:${telephoneLink}`}
+                            className="mt-1 inline-block font-medium hover:text-teal"
+                        >
+                            {appointmentNumber}
+                        </a>
+                    </div>
+                </div>
+            )}
+
+            {/* Visiting hours */}
+            {visitingHours && (
+                <div className="mt-5 flex gap-3 text-sm text-muted">
+                    <Clock
+                        size={18}
+                        className="mt-0.5 shrink-0 text-teal"
+                    />
+
+                    <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-ink">
+                            {bn
+                                ? "সাক্ষাতের সময়"
+                                : "Visiting Hours"}
+                        </p>
+
+                        <p className="mt-1 leading-6">
+                            {visitingHours}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Visiting days */}
+            {visitingDays && (
+                <div className="mt-5 flex gap-3 border-t border-line pt-4 text-sm text-muted">
+                    <CalendarDays
+                        size={18}
+                        className="mt-0.5 shrink-0 text-teal"
+                    />
+
+                    <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-ink">
+                            {bn
+                                ? "সাক্ষাতের দিন"
+                                : "Visiting Days"}
+                        </p>
+
+                        <p className="mt-1 leading-6">
+                            {visitingDays}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Appointment button */}
+            {appointmentNumber && (
+                <a
+                    href={`tel:${telephoneLink}`}
+                    className="mt-5 inline-flex items-center gap-2 text-xs font-extrabold text-teal transition-colors hover:text-deep"
+                >
+                    {bn
+                        ? "অ্যাপয়েন্টমেন্টের জন্য ফোন করুন"
+                        : "Call for Appointment"}
+
+                    <ArrowRight size={14} />
+                </a>
+            )}
         </article>
     );
 }
+
+/* -------------------------------------------------------
+   HOME PAGE
+------------------------------------------------------- */
 
 export function HomePage() {
     const { i18n } = useTranslation();
@@ -395,14 +598,21 @@ export function HomePage() {
     const [error, setError] = useState("");
 
     const preview =
-        new URLSearchParams(window.location.search).get("preview") === "1";
+        new URLSearchParams(window.location.search).get(
+            "preview"
+        ) === "1";
 
     useEffect(() => {
         let token: string | undefined;
 
         try {
-            const raw = sessionStorage.getItem("kafi_cms_session");
-            token = raw ? JSON.parse(raw).accessToken : undefined;
+            const raw = sessionStorage.getItem(
+                "kafi_cms_session"
+            );
+
+            token = raw
+                ? JSON.parse(raw).accessToken
+                : undefined;
         } catch {
             token = undefined;
         }
@@ -418,34 +628,48 @@ export function HomePage() {
                         preview
                             ? {
                                 ...section,
-                                publishedContent: section.draftContent,
+                                publishedContent:
+                                section.draftContent,
                             }
                             : section
                     )
                 )
             )
-            .catch((requestError) => setError(requestError.message));
+            .catch((requestError) =>
+                setError(requestError.message)
+            );
     }, [preview]);
 
     const seo = sections.find(
         (section) => section.key === "seo"
     )?.publishedContent as any;
 
+    /* SEO metadata */
     useEffect(() => {
-        document.documentElement.lang = lang === "en" ? "en" : "bn";
+        document.documentElement.lang =
+            lang === "en" ? "en" : "bn";
 
         if (!seo) return;
 
-        const title = langText(seo.metaTitleBn, seo.metaTitleEn, lang);
+        const title = langText(
+            seo.metaTitleBn,
+            seo.metaTitleEn,
+            lang
+        );
+
         const description = langText(
             seo.metaDescriptionBn,
             seo.metaDescriptionEn,
             lang
         );
 
-        if (title) document.title = title;
+        if (title) {
+            document.title = title;
+        }
 
-        let meta = document.querySelector('meta[name="description"]');
+        let meta = document.querySelector(
+            'meta[name="description"]'
+        );
 
         if (!meta) {
             meta = document.createElement("meta");
@@ -485,7 +709,8 @@ export function HomePage() {
             document.head.appendChild(canonical);
         }
 
-        canonical.href = window.location.origin + window.location.pathname;
+        canonical.href =
+            window.location.origin + window.location.pathname;
 
         let ld = document.getElementById("doctor-jsonld");
 
@@ -509,8 +734,7 @@ export function HomePage() {
         });
     }, [lang, seo]);
 
-    // Statistics now appear directly after the Hero.
-    // The old standalone experience section is no longer displayed.
+    /* Landing page section order */
     const landingOrder = [
         "hero",
         "stats",
@@ -522,7 +746,8 @@ export function HomePage() {
     const ordered = [...sections]
         .filter(
             (section) =>
-                section.enabled && landingOrder.includes(section.key)
+                section.enabled &&
+                landingOrder.includes(section.key)
         )
         .sort(
             (a, b) =>
@@ -530,7 +755,7 @@ export function HomePage() {
                 landingOrder.indexOf(b.key)
         );
 
-    // Doctor Profile content
+    /* Doctor profile content */
     const aboutSection = sections.find(
         (section) => section.key === "about"
     );
@@ -541,8 +766,7 @@ export function HomePage() {
             : aboutSection?.publishedContent
     ) as Content | undefined;
 
-    // Academic Qualifications are stored in a separate section.
-    // In preview mode, read its draftContent; otherwise read publishedContent.
+    /* Qualifications */
     const qualificationsSection = sections.find(
         (section) => section.key === "qualifications"
     );
@@ -553,8 +777,6 @@ export function HomePage() {
             : qualificationsSection?.publishedContent
     ) as Content | undefined;
 
-    // Prefer the separate Qualifications section.
-    // Keep the About fallback for compatibility with older content.
     const qualificationItems = Array.isArray(
         qualificationsContent?.items
     )
@@ -565,12 +787,14 @@ export function HomePage() {
 
     return (
         <div>
+            {/* Draft preview notice */}
             {preview && (
                 <div className="sticky top-0 z-50 bg-amber-100 px-4 py-2 text-center text-sm font-bold text-amber-950">
                     Draft preview — not publicly published
                 </div>
             )}
 
+            {/* Loading error */}
             {error && (
                 <div
                     className="container-shell py-4 text-sm text-muted"
@@ -582,11 +806,18 @@ export function HomePage() {
                 </div>
             )}
 
+            {/* Landing sections */}
             {ordered.map((section) => {
-                const content = (section.publishedContent || {}) as Content;
+                const content = (
+                    preview
+                        ? section.draftContent
+                        : section.publishedContent
+                ) as Content;
 
                 const heading = sectionNames[section.key]
-                    ? sectionNames[section.key][lang === "en" ? "en" : "bn"]
+                    ? sectionNames[section.key][
+                        lang === "en" ? "en" : "bn"
+                        ]
                     : langText(
                         content.headingBn || section.title,
                         content.headingEn || section.title,
@@ -605,6 +836,7 @@ export function HomePage() {
                     lang
                 );
 
+                /* Hero */
                 if (section.key === "hero") {
                     return (
                         <HeroSlider
@@ -615,6 +847,7 @@ export function HomePage() {
                     );
                 }
 
+                /* Statistics */
                 if (section.key === "stats") {
                     return (
                         <StatsBand
@@ -625,6 +858,7 @@ export function HomePage() {
                     );
                 }
 
+                /* Doctor profile */
                 if (section.key === "about") {
                     const doctorName = langText(
                         content.headingBn,
@@ -642,7 +876,9 @@ export function HomePage() {
                                     <div className="about-art about-art-photo about-profile-visual">
                                         {content.imageUrl ? (
                                             <img
-                                                src={resolveImageUrl(content.imageUrl)}
+                                                src={resolveImageUrl(
+                                                    content.imageUrl
+                                                )}
                                                 alt={
                                                     doctorName ||
                                                     (lang === "en"
@@ -685,7 +921,7 @@ export function HomePage() {
                                         )}
 
                                         {qualificationItems.length > 0 && (
-                                            <div className="qualification-grid mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div className="qualification-grid mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                                                 {qualificationItems.map(
                                                     (item, index) => (
                                                         <article
@@ -739,6 +975,7 @@ export function HomePage() {
                     );
                 }
 
+                /* Chambers */
                 if (section.key === "chambers") {
                     return (
                         <section
@@ -757,7 +994,9 @@ export function HomePage() {
                                     <h2 className="section-title">
                                         {heading ||
                                             sectionNames.chambers[
-                                                lang === "en" ? "en" : "bn"
+                                                lang === "en"
+                                                    ? "en"
+                                                    : "bn"
                                                 ]}
                                     </h2>
 
@@ -774,23 +1013,27 @@ export function HomePage() {
                                     )}
                                 </div>
 
-                                {content.items && content.items.length > 0 && (
-                                    <div className="chambers-grid">
-                                        {content.items.map((item, index) => (
-                                            <ChamberCard
-                                                key={index}
-                                                item={item}
-                                                index={index}
-                                                lang={lang}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
+                                {content.items &&
+                                    content.items.length > 0 && (
+                                        <div className="chambers-grid">
+                                            {content.items.map(
+                                                (item, index) => (
+                                                    <ChamberCard
+                                                        key={index}
+                                                        item={item}
+                                                        index={index}
+                                                        lang={lang}
+                                                    />
+                                                )
+                                            )}
+                                        </div>
+                                    )}
                             </div>
                         </section>
                     );
                 }
 
+                /* Other landing sections */
                 return (
                     <section
                         id={section.key}
@@ -807,7 +1050,9 @@ export function HomePage() {
                                 <h2 className="section-title">
                                     {heading ||
                                         sectionNames[section.key]?.[
-                                            lang === "en" ? "en" : "bn"
+                                            lang === "en"
+                                                ? "en"
+                                                : "bn"
                                             ]}
                                 </h2>
 
@@ -826,42 +1071,45 @@ export function HomePage() {
 
                             {content.items && (
                                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                                    {content.items.map((item, index) => (
-                                        <article
-                                            key={index}
-                                            className="feature-card"
-                                        >
-                                            <span className="feature-icon">
-                                                <Stethoscope />
-                                            </span>
+                                    {content.items.map(
+                                        (item, index) => (
+                                            <article
+                                                key={index}
+                                                className="feature-card"
+                                            >
+                                                <span className="feature-icon">
+                                                    <Stethoscope />
+                                                </span>
 
-                                            <h3 className="text-lg font-extrabold">
-                                                {langText(
-                                                    item.titleBn,
-                                                    item.titleEn,
-                                                    lang
-                                                )}
-                                            </h3>
-
-                                            <p className="mt-2 text-sm leading-7 text-muted">
-                                                {langText(
-                                                    item.descriptionBn,
-                                                    item.descriptionEn,
-                                                    lang
-                                                )}
-                                            </p>
-
-                                            {(item.metaBn || item.metaEn) && (
-                                                <p className="mt-3 text-sm font-bold text-teal">
+                                                <h3 className="text-lg font-extrabold">
                                                     {langText(
-                                                        item.metaBn,
-                                                        item.metaEn,
+                                                        item.titleBn,
+                                                        item.titleEn,
+                                                        lang
+                                                    )}
+                                                </h3>
+
+                                                <p className="mt-2 text-sm leading-7 text-muted">
+                                                    {langText(
+                                                        item.descriptionBn,
+                                                        item.descriptionEn,
                                                         lang
                                                     )}
                                                 </p>
-                                            )}
-                                        </article>
-                                    ))}
+
+                                                {(item.metaBn ||
+                                                    item.metaEn) && (
+                                                    <p className="mt-3 text-sm font-bold text-teal">
+                                                        {langText(
+                                                            item.metaBn,
+                                                            item.metaEn,
+                                                            lang
+                                                        )}
+                                                    </p>
+                                                )}
+                                            </article>
+                                        )
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -869,6 +1117,7 @@ export function HomePage() {
                 );
             })}
 
+            {/* Health education videos */}
             <HealthVideos preview={preview} />
         </div>
     );
